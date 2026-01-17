@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#12121a;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#grad)" stroke="#2a2a3a" stroke-width="8" />
+  
+  <!-- Magnifying Glass Handle -->
+  <path d="M336 336 L400 400" stroke="#3a3a4a" stroke-width="40" stroke-linecap="round" />
+  
+  <!-- Chip / Driver Icon -->
+  <g transform="translate(166, 166)">
+    <!-- Chip Body -->
+    <rect x="40" y="40" width="100" height="100" rx="10" fill="#1a1a24" stroke="#00d4aa" stroke-width="6" />
+    <!-- Chip Pins -->
+    <path d="M40 60 H20 M40 90 H20 M40 120 H20" stroke="#00a888" stroke-width="4" stroke-linecap="round" />
+    <path d="M140 60 H160 M140 90 H160 M140 120 H160" stroke="#00a888" stroke-width="4" stroke-linecap="round" />
+    <path d="M60 40 V20 M90 40 V20 M120 40 V20" stroke="#00a888" stroke-width="4" stroke-linecap="round" />
+    <path d="M60 140 V160 M90 140 V160 M120 140 V160" stroke="#00a888" stroke-width="4" stroke-linecap="round" />
+    <!-- Inner Circuit -->
+    <rect x="70" y="70" width="40" height="40" rx="4" fill="#00d4aa" fill-opacity="0.2" />
+  </g>
+  
+  <!-- Magnifying Glass Rim -->
+  <circle cx="256" cy="256" r="130" fill="none" stroke="#00d4aa" stroke-width="16" filter="url(#glow)" />
+  
+  <!-- Glint/Reflection -->
+  <path d="M320 180 A 100 100 0 0 0 190 320" fill="none" stroke="white" stroke-opacity="0.1" stroke-width="8" stroke-linecap="round" />
+
+</svg>
