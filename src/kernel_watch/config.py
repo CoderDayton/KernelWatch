@@ -2,11 +2,26 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Annotated
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def get_default_data_dir() -> Path:
+    """Get the default data directory based on the environment."""
+    # If running as a bundled executable on Windows, use the app data directory
+    if os.name == "nt":
+        # Use LOCALAPPDATA/KernelWatch by default on Windows
+        app_data = os.environ.get("LOCALAPPDATA")
+        if app_data:
+            return Path(app_data) / "KernelWatch"
+        return Path.home() / "KernelWatch"
+
+    # On Linux/macOS or when running from source, use current directory
+    return Path.cwd() / "data"
 
 
 class APIKeys(BaseSettings):
@@ -94,15 +109,15 @@ class OutputSettings(BaseSettings):
     )
 
     db_path: Path = Field(
-        default=Path("data/drivers.db"),
+        default_factory=lambda: get_default_data_dir() / "drivers.db",
         description="SQLite database path",
     )
     cache_dir: Path = Field(
-        default=Path("data/cache"),
+        default_factory=lambda: get_default_data_dir() / "cache",
         description="Cache directory for downloaded files",
     )
     reports_dir: Path = Field(
-        default=Path("data/reports"),
+        default_factory=lambda: get_default_data_dir() / "reports",
         description="Output directory for reports",
     )
 

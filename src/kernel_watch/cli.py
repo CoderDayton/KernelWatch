@@ -515,4 +515,23 @@ def dashboard(
 
 
 if __name__ == "__main__":
-    app()
+    try:
+        app()
+    except Exception as e:
+        # Last resort error logging for bundled executables
+        try:
+            import traceback
+
+            from kernel_watch.config import get_default_data_dir
+
+            error_dir = get_default_data_dir()
+            error_dir.mkdir(parents=True, exist_ok=True)
+            error_file = error_dir / "kernel-watch-error.log"
+
+            with open(error_file, "a") as f:
+                f.write(f"\n--- CRASH AT {datetime.now().isoformat()} ---\n")
+                f.write(traceback.format_exc())
+                f.write("\n")
+        except Exception:
+            pass
+        raise e
