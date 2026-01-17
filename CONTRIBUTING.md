@@ -49,7 +49,7 @@ We use `uv` for dependency management and `ruff`/`mypy` for code quality.
 
 ## Project Structure
 
-*   `src/driver_search/`: Python backend logic (CLI, Analysis, Sources).
+*   `src/kernel_watch/`: Python backend logic (CLI, Analysis, Sources).
 *   `ui/`: Tauri frontend (SolidJS + Tailwind v4).
 *   `tests/`: Pytest suite.
 *   `scripts/`: Build helpers.

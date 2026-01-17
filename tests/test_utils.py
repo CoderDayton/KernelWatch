@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from driver_search.utils.hashing import compute_hashes, compute_hashes_from_bytes
-from driver_search.utils.http import RateLimitedClient, RateLimiter
+from kernel_watch.utils.hashing import compute_hashes, compute_hashes_from_bytes
+from kernel_watch.utils.http import RateLimitedClient, RateLimiter
 
 
 def test_compute_hashes_from_bytes() -> None:

@@ -1,4 +1,4 @@
-"""Integration tests for Driver Search."""
+"""Integration tests for KernelWatch."""
 
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from driver_search.cli import app
-from driver_search.config import get_settings, reset_settings
-from driver_search.db import get_database
+from kernel_watch.cli import app
+from kernel_watch.config import get_settings, reset_settings
+from kernel_watch.db import get_database
 
 runner = CliRunner()
 
@@ -42,7 +42,7 @@ def test_cli_help() -> None:
 def test_cli_sync_loldrivers(mock_db: Path) -> None:
     """Test sync-loldrivers command (mocked)."""
     with patch(
-        "driver_search.analyzer.Analyzer.sync_loldrivers", new_callable=AsyncMock
+        "kernel_watch.analyzer.Analyzer.sync_loldrivers", new_callable=AsyncMock
     ) as mock_sync:
         mock_sync.return_value = 10
 
@@ -67,7 +67,7 @@ def test_cli_dashboard_json(mock_db: Path) -> None:
 @pytest.mark.asyncio
 async def test_save_driver(mock_db: Path) -> None:
     """Test saving a driver to DB."""
-    from driver_search.models import Driver, DriverHash
+    from kernel_watch.models import Driver, DriverHash
 
     driver = Driver(
         name="test.sys",

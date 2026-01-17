@@ -36,6 +36,7 @@ Thumbs.db
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+data/
 
 # Driver samples (don't commit binaries)
 *.sys

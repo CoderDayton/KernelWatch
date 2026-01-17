@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from driver_search.analysis.disasm import IOCTLAccess, IOCTLCode, IOCTLMethod
-from driver_search.analysis.pe import PEAnalysisResult, analyze_pe, calculate_risk_score
-from driver_search.models import Driver, DriverHash
+from kernel_watch.analysis.disasm import IOCTLAccess, IOCTLCode, IOCTLMethod
+from kernel_watch.analysis.pe import PEAnalysisResult, analyze_pe, calculate_risk_score
+from kernel_watch.models import Driver, DriverHash
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def test_analyze_pe_basic(mock_pe: MagicMock, tmp_path: Path) -> None:
     dummy_file = tmp_path / "test.sys"
     dummy_file.write_bytes(b"MZ" + b"\x00" * 100)
 
-    with patch("driver_search.analysis.pe.compute_full_hashes") as mock_hash:
+    with patch("kernel_watch.analysis.pe.compute_full_hashes") as mock_hash:
         mock_hash.return_value = DriverHash(sha256="hash")
 
         # We need to make sure pefile is imported before we patch it if we used string patching

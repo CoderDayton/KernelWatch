@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    driver_search_lib::run();
+    kernel_watch_lib::run();
 }

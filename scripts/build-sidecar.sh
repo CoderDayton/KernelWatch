@@ -57,7 +57,7 @@ uv run pyinstaller \
     --distpath "$BINARIES_DIR" \
     --specpath "$PROJECT_ROOT/build" \
     --workpath "$PROJECT_ROOT/build/pyinstaller" \
-    src/driver_search/cli.py
+    src/kernel_watch/cli.py
 
 echo "Built: $BINARIES_DIR/kernel-watch-$TARGET$EXTENSION"
 echo "Done!"

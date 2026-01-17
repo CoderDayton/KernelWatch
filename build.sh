@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Driver Search Build Process..."
+echo "🚀 Starting KernelWatch Build Process..."
 
 # 1. Setup Python Environment
 echo "🐍 Setting up Python dependencies..."

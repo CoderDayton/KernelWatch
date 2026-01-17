@@ -57,10 +57,10 @@ export interface CVEEntry {
 }
 
 /**
- * Execute a driver-search CLI command via sidecar
+ * Execute a kernel-watch CLI command via sidecar
  */
 async function runCommand(args: string[]): Promise<string> {
-  const command = Command.sidecar('binaries/driver-search', args);
+  const command = Command.sidecar('binaries/kernel-watch', args);
   const output = await command.execute();
   
   if (output.code !== 0) {

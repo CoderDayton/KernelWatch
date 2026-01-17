@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from driver_search.db import get_database
-from driver_search.models import AnalysisResult, Driver, DriverHash, RiskLevel
+from kernel_watch.db import get_database
+from kernel_watch.models import AnalysisResult, Driver, DriverHash, RiskLevel
 
 
 @pytest.mark.asyncio

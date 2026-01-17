@@ -22,9 +22,9 @@ export default function Settings() {
         <div class="mt-6 space-y-4">
           <h3 class="font-medium text-[var(--color-text)]">Current Configuration Sources</h3>
           <ul class="list-disc list-inside text-sm text-[var(--color-text-dim)] space-y-1">
-            <li>NVD API Key: Env var <code>DRIVER_SEARCH_NVD_API_KEY</code></li>
-            <li>VirusTotal API Key: Env var <code>DRIVER_SEARCH_VIRUSTOTAL_API_KEY</code></li>
-            <li>GitHub Token: Env var <code>DRIVER_SEARCH_GITHUB_TOKEN</code></li>
+            <li>NVD API Key: Env var <code>KERNEL_WATCH_NVD_API_KEY</code></li>
+            <li>VirusTotal API Key: Env var <code>KERNEL_WATCH_VIRUSTOTAL_API_KEY</code></li>
+            <li>GitHub Token: Env var <code>KERNEL_WATCH_GITHUB_TOKEN</code></li>
           </ul>
         </div>
       </Panel>

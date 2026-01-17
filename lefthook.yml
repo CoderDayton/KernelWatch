@@ -12,7 +12,7 @@ pre-commit:
       run: uv run ruff format --check {staged_files}
     backend-types:
       glob: "**/*.py"
-      run: uv run mypy src/ tests/
+      run: uv run python -m mypy src/ tests/
     frontend-typecheck:
       root: "ui/"
       glob: "**/*.{ts,tsx}"

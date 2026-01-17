@@ -4,16 +4,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from driver_search.sources.loldrivers import LOLDriversSource
-from driver_search.sources.nvd import NVDSource
+from kernel_watch.sources.loldrivers import LOLDriversSource
+from kernel_watch.sources.nvd import NVDSource
 
 
 @pytest.mark.asyncio
 async def test_nvd_source_fetch() -> None:
     """Test NVD fetch logic."""
-    with patch(
-        "driver_search.utils.http.RateLimitedClient.get", new_callable=AsyncMock
-    ) as mock_get:
+    with patch("kernel_watch.utils.http.RateLimitedClient.get", new_callable=AsyncMock) as mock_get:
         # Mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -46,8 +44,8 @@ async def test_nvd_source_fetch() -> None:
 async def test_loldrivers_source_fetch() -> None:
     """Test LOLDrivers fetch logic."""
     with (
-        patch("driver_search.sources.loldrivers.LOLDriversSource._list_yaml_files") as mock_list,
-        patch("driver_search.sources.loldrivers.LOLDriversSource._fetch_driver_yaml") as mock_fetch,
+        patch("kernel_watch.sources.loldrivers.LOLDriversSource._list_yaml_files") as mock_list,
+        patch("kernel_watch.sources.loldrivers.LOLDriversSource._fetch_driver_yaml") as mock_fetch,
     ):
         mock_list.return_value = ["test.yaml"]
         mock_fetch.return_value = {

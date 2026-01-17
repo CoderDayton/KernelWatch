@@ -42,7 +42,7 @@ function Sidebar(props: { current: View; onNavigate: (view: View) => void }) {
       aria-label="Main navigation"
     >
       <header class="p-4 border-b border-[var(--color-border)]">
-        <h1 class="text-lg font-bold text-[var(--color-accent)]">Driver Search</h1>
+        <h1 class="text-lg font-bold text-[var(--color-accent)]">KernelWatch</h1>
         <p class="text-xs text-[var(--color-text-muted)]">Vulnerable Driver Research</p>
       </header>
 

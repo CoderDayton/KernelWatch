@@ -4,16 +4,16 @@ import json
 
 import yaml
 
-from driver_search.models import (
+from kernel_watch.models import (
     AnalysisResult,
     Driver,
     DriverHash,
     Vulnerability,
     VulnerabilityType,
 )
-from driver_search.output.json import analysis_result_to_dict, to_json
-from driver_search.output.loldrivers import generate_loldrivers_yaml
-from driver_search.output.yara import generate_yara_rule
+from kernel_watch.output.json import analysis_result_to_dict, to_json
+from kernel_watch.output.loldrivers import generate_loldrivers_yaml
+from kernel_watch.output.yara import generate_yara_rule
 
 
 def test_loldrivers_yaml() -> None:
