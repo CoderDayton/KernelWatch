@@ -1,6 +1,6 @@
 # Driver Search
 
-<img src="assets/logo.svg" width="180" align="right" alt="Driver Search Logo" />
+<img src="assets/logo.svg" width="180" align="center" alt="Driver Search Logo" />
 
 Vulnerable driver research tooling for blocklist contribution (Microsoft HVCI, LOLDrivers).
 
@@ -50,12 +50,15 @@ This project uses a hybrid build system (Python Sidecar + Rust/Tauri Frontend).
 ### Manual Build Steps
 
 1. **Build Python Sidecar**
+
    ```bash
    ./scripts/build-sidecar.sh
    ```
+
    *This creates the standalone executable in `ui/src-tauri/binaries/`.*
 
 2. **Build Tauri App**
+
    ```bash
    cd ui
    npm install
