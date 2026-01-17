@@ -1,20 +1,38 @@
-# Driver Search
+<div align="center">
+  <img src="assets/logo.svg" width="160" alt="Driver Search Logo" />
+  <h1>Driver Search</h1>
+  <p><strong>Proactive Vulnerable Driver Hunting</strong></p>
 
-<img src="assets/logo.svg" width="180" align="center" alt="Driver Search Logo" />
+  <p>
+    <a href="https://github.com/yourusername/driver-search/actions/workflows/ci.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/yourusername/driver-search/ci.yml?branch=main&label=build&style=flat-square" alt="Build Status" />
+    </a>
+    <a href="https://github.com/yourusername/driver-search/blob/main/LICENSE">
+      <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" />
+    </a>
+    <img src="https://img.shields.io/badge/python-3.10+-yellow?style=flat-square&logo=python" alt="Python Version" />
+    <img src="https://img.shields.io/badge/rust-1.77+-orange?style=flat-square&logo=rust" alt="Rust Version" />
+    <img src="https://img.shields.io/badge/style-ruff-000000?style=flat-square" alt="Code Style" />
+  </p>
+  
+  <p><em>A specialized toolkit for security researchers to identify vulnerable Windows kernel drivers<br/>before they are exploited in the wild.</em></p>
+</div>
 
-Vulnerable driver research tooling for blocklist contribution (Microsoft HVCI, LOLDrivers).
+<br/>
 
-## Purpose
+## Overview
 
-Proactively hunt for vulnerable Windows kernel drivers that could be abused for privilege escalation (BYOVD attacks) and contribute them to blocklists before they're exploited in the wild.
+**Driver Search** bridges the gap between driver discovery and defensive blocklisting. It automates the tedious process of hunting for "Bring Your Own Vulnerable Driver" (BYOVD) candidates—signed drivers that expose dangerous primitives like MSR access or physical memory mapping.
+
+By combining multi-source monitoring with automated static analysis, it helps researchers identify high-risk drivers and contribute them to [LOLDrivers](https://github.com/magicsword-io/LOLDrivers) or the Microsoft HVCI blocklist.
 
 ## Features
 
-- **Multi-source monitoring**: NVD/CVE feeds, LOLDrivers GitHub, VirusTotal, vendor sites
-- **Automated analysis**: PE parsing, import analysis, IOCTL detection, dangerous pattern matching
-- **Risk scoring**: Prioritize drivers based on vulnerability indicators
-- **Export formats**: LOLDrivers YAML, MSRC reports, YARA rules
-- **Tauri UI**: Modern semantic interface with dark mode and dashboard
+- **🛡️ Automated Analysis**: Static analysis of PE files to detect dangerous imports (`MmMapIoSpace`, `__readmsr`), IOCTL handlers, and potentially unsafe opcodes via Capstone disassembly.
+- **📡 Multi-Source Intelligence**: Monitors NVD for new CVEs, tracks LOLDrivers updates, and integrates with VirusTotal to find low-detection candidates.
+- **📊 Risk Scoring**: Assigns confidence scores to drivers based on capability exposure, signature status, and blocklist absence.
+- **🖥️ Modern Interface**: A semantic, dark-themed dashboard built with Tauri and SolidJS for managing your research workflow.
+- **📝 Standardized Output**: Generates ready-to-submit YAML for LOLDrivers and YARA rules for detection.
 
 ## Prerequisites
 
@@ -26,10 +44,12 @@ Proactively hunt for vulnerable Windows kernel drivers that could be abused for 
   - **Windows**: C++ Build Tools (via Visual Studio Installer)
   - **macOS**: Xcode Command Line Tools
 
-## Installation
+## Quick Start
+
+### Installation
 
 ```bash
-# Clone and install
+# Clone the repository
 git clone https://github.com/yourusername/driver-search.git
 cd driver-search
 
@@ -37,64 +57,59 @@ cd driver-search
 uv sync
 ```
 
-## Build
+### Building the App
 
-This project uses a hybrid build system (Python Sidecar + Rust/Tauri Frontend).
-
-### Quick Build (All-in-one)
+This project uses a hybrid architecture (Python backend + Tauri frontend). We provide a unified build script:
 
 ```bash
 ./build.sh
 ```
 
-### Manual Build Steps
+*This will compile the Python sidecar, build the frontend, and generate the final application executable.*
 
-1. **Build Python Sidecar**
+## Usage
 
-   ```bash
-   ./scripts/build-sidecar.sh
-   ```
+### CLI (Headless)
 
-   *This creates the standalone executable in `ui/src-tauri/binaries/`.*
-
-2. **Build Tauri App**
-
-   ```bash
-   cd ui
-   npm install
-   npm run tauri:build
-   ```
-
-## Development
+Perfect for CI pipelines or server-side monitoring.
 
 ```bash
-# Start backend in watch mode (if applicable) or run CLI directly
-uv run driver-search --help
+# Analyze a specific driver
+uv run driver-search analyze /path/to/suspicious.sys
 
-# Start UI in dev mode
+# Monitor sources for new threats (continuous mode)
+uv run driver-search monitor --sources nvd,loldrivers
+
+# Export findings for LOLDrivers contribution
+uv run driver-search export loldrivers --hash <SHA256>
+```
+
+### Graphical Interface
+
+Launch the desktop app to view the dashboard, visualize risk scores, and manage your driver database.
+
+```bash
 cd ui
 npm run tauri:dev
 ```
 
 ## Configuration
 
-Create a `.env` file with your API keys:
+Create a `.env` file in the root directory to enable external API integrations:
 
 ```env
-DRIVER_SEARCH_NVD_API_KEY=your-nvd-api-key
-DRIVER_SEARCH_VIRUSTOTAL_API_KEY=your-vt-api-key
-DRIVER_SEARCH_GITHUB_TOKEN=your-github-token
+DRIVER_SEARCH_NVD_API_KEY=your-key-here        # For higher rate limits
+DRIVER_SEARCH_VIRUSTOTAL_API_KEY=your-key-here # For detection ratios
+DRIVER_SEARCH_GITHUB_TOKEN=your-token-here     # For LOLDrivers sync
 ```
 
-## Contributing to Blocklists
+## Contributing
 
-### LOLDrivers
+We welcome contributions to improve detection heuristics or add new data sources.
 
-1. Find a vulnerable driver
-2. Analyze with `driver-search analyze`
-3. Export with `driver-search export loldrivers`
-4. Submit PR to [magicsword-io/LOLDrivers](https://github.com/magicsword-io/LOLDrivers)
+1. **Found a vulnerable driver?** Please report it to [LOLDrivers](https://github.com/magicsword-io/LOLDrivers) first.
+2. **Improving the tool?** Open a PR with your changes. Please ensure `lefthook` checks pass.
 
 ## License
 
-MIT
+MIT © 2026
