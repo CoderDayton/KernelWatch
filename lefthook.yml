@@ -30,4 +30,4 @@ pre-push:
   parallel: false
   commands:
     backend-test:
-      run: uv run pytest tests/
+      run: uv run python -m pytest tests/
