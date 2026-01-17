@@ -105,12 +105,14 @@ KERNEL_WATCH_GITHUB_TOKEN=your-token-here     # For LOLDrivers sync
 
 ## Contributing
 
-We welcome contributions to improve detection heuristics or add new data sources.
+We welcome contributions to improve detection heuristics or add new data sources. Please see our [Contributing Guide](CONTRIBUTING.md) for details on our development workflow and how to get started.
 
 1. **Found a vulnerable driver?** Please report it to [LOLDrivers](https://github.com/magicsword-io/LOLDrivers) first.
 2. **Improving the tool?** Open a PR with your changes. Please ensure `lefthook` checks pass.
 
 ## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 MIT © 2026
 
