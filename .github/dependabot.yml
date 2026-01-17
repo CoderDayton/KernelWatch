@@ -1,0 +1,73 @@
+version: 2
+updates:
+  # Python dependencies (uv/pip)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        patterns:
+          - "ruff"
+          - "mypy"
+          - "pytest*"
+          - "pre-commit"
+      production-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "ruff"
+          - "mypy"
+          - "pytest*"
+          - "pre-commit"
+
+  # Rust dependencies (Cargo)
+  - package-ecosystem: "cargo"
+    directory: "/ui/src-tauri"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      tauri-dependencies:
+        patterns:
+          - "tauri*"
+      all-other-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "tauri*"
+
+  # JavaScript/TypeScript dependencies (npm)
+  - package-ecosystem: "npm"
+    directory: "/ui"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      solidjs-dependencies:
+        patterns:
+          - "solid-js"
+          - "@solidjs/*"
+      tauri-dependencies:
+        patterns:
+          - "@tauri-apps/*"
+      dev-dependencies:
+        dependency-type: "development"
+      production-dependencies:
+        dependency-type: "production"
+        exclude-patterns:
+          - "solid-js"
+          - "@solidjs/*"
+          - "@tauri-apps/*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
