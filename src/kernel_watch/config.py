@@ -20,8 +20,12 @@ def get_default_data_dir() -> Path:
             return Path(app_data) / "KernelWatch"
         return Path.home() / "KernelWatch"
 
-    # On Linux/macOS or when running from source, use current directory
-    return Path.cwd() / "data"
+    # On Linux/macOS, use XDG_DATA_HOME if defined, otherwise ~/.local/share
+    xdg_data_home = os.environ.get("XDG_DATA_HOME")
+    if xdg_data_home:
+        return Path(xdg_data_home) / "kernel-watch"
+
+    return Path.home() / ".local" / "share" / "kernel-watch"
 
 
 class APIKeys(BaseSettings):
@@ -142,9 +146,19 @@ class Settings(BaseSettings):
 
     def ensure_directories(self) -> None:
         """Create required directories if they don't exist."""
-        self.output.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.output.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.output.reports_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.output.db_path.parent.mkdir(parents=True, exist_ok=True)
+            self.output.cache_dir.mkdir(parents=True, exist_ok=True)
+            self.output.reports_dir.mkdir(parents=True, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            msg = (
+                f"Application does not have permissions to create or write to the "
+                f"data directory: {self.output.db_path.parent}\n"
+                f"Error: {e}\n"
+                f"Please check directory permissions or set a different data directory "
+                f"via environment variables."
+            )
+            raise RuntimeError(msg) from e
 
 
 # Global settings instance

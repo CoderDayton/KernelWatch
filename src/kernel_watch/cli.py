@@ -42,9 +42,16 @@ def main(
     ] = False,
 ) -> None:
     """KernelWatch - Vulnerable driver research tooling."""
+    settings = get_settings()
     if debug:
-        settings = get_settings()
         settings.debug = True
+
+    try:
+        settings.ensure_directories()
+    except RuntimeError as e:
+        console.print("[bold red]Initialization Error:[/bold red]")
+        console.print(str(e))
+        raise typer.Exit(1) from e
 
 
 def _run_async(coro: Any) -> Any:
@@ -524,14 +531,30 @@ if __name__ == "__main__":
 
             from kernel_watch.config import get_default_data_dir
 
+            # Try primary data directory first
             error_dir = get_default_data_dir()
-            error_dir.mkdir(parents=True, exist_ok=True)
-            error_file = error_dir / "kernel-watch-error.log"
-
-            with open(error_file, "a") as f:
-                f.write(f"\n--- CRASH AT {datetime.now().isoformat()} ---\n")
-                f.write(traceback.format_exc())
-                f.write("\n")
+            try:
+                error_dir.mkdir(parents=True, exist_ok=True)
+                error_file = error_dir / "kernel-watch-error.log"
+                with open(error_file, "a") as f:
+                    f.write(f"\n--- CRASH AT {datetime.now().isoformat()} ---\n")
+                    f.write(traceback.format_exc())
+                    f.write("\n")
+            except (PermissionError, OSError):
+                # Fallback to home directory or /tmp
+                fallback_paths = [
+                    Path.home() / "kernel-watch-error.log",
+                    Path("/tmp/kernel-watch-error.log"),  # noqa: S108
+                ]
+                for path in fallback_paths:
+                    try:
+                        with open(path, "a") as f:
+                            f.write(f"\n--- CRASH AT {datetime.now().isoformat()} ---\n")
+                            f.write(traceback.format_exc())
+                            f.write("\n")
+                        break
+                    except (PermissionError, OSError):
+                        continue
         except Exception:
             pass
         raise e
