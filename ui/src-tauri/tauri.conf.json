@@ -51,9 +51,5 @@
       "binaries/kernel-watch"
     ]
   },
-  "plugins": {
-    "shell": {
-      "sidecar": true
-    }
-  }
+  "plugins": {}
 }
