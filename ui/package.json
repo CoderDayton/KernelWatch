@@ -23,9 +23,9 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.9.6",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.0.9",
     "typescript": "~5.9.3",
-    "vite": "^6.4.1",
+    "vite": "^7.3.1",
     "vite-plugin-solid": "^2.11.10"
   }
 }
