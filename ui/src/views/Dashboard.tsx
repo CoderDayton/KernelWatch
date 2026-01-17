@@ -1,89 +1,109 @@
-import { createResource, Suspense, Show } from 'solid-js';
+/**
+ * Dashboard View - Overview and statistics
+ * Semantic: section > article structure, proper headings, ARIA labels
+ */
+import { createResource, Suspense, Show, For } from 'solid-js';
 import { getDashboardStats, type DashboardStats } from '../lib/sidecar';
+import { Panel, StatCard, EmptyState, Skeleton } from '../components/primitives';
+import { cn } from '../lib/styles';
 
-interface StatCardProps {
-  label: string;
-  value: number | string;
-  variant?: 'default' | 'critical' | 'success';
-}
+const QUICK_ACTIONS = [
+  { id: 'analyze', label: 'Analyze Driver', icon: '📁', desc: 'Analyze a driver file for vulnerabilities' },
+  { id: 'sync', label: 'Sync LOLDrivers', icon: '🔄', desc: 'Update the LOLDrivers hash database' },
+  { id: 'search', label: 'Search NVD', icon: '🔍', desc: 'Search for driver-related CVEs' },
+  { id: 'monitor', label: 'Start Monitor', icon: '📡', desc: 'Begin monitoring sources' },
+] as const;
 
-function StatCard(props: StatCardProps) {
-  const variantClasses = () => {
-    switch (props.variant) {
-      case 'critical':
-        return 'border-critical/30 bg-critical/5';
-      case 'success':
-        return 'border-success/30 bg-success/5';
-      default:
-        return 'border-border bg-surface';
-    }
-  };
+function StatsGrid(props: { stats: DashboardStats }) {
+  const items = () => [
+    { label: 'Drivers Analyzed', value: props.stats.drivers },
+    { label: 'Analysis Runs', value: props.stats.analyses },
+    { label: 'Vulnerabilities', value: props.stats.vulnerabilities, severity: props.stats.vulnerabilities > 0 ? 'critical' as const : undefined },
+    { label: 'LOLDrivers Hashes', value: props.stats.loldrivers_hashes },
+    { label: 'Critical Risk', value: props.stats.critical_risk, severity: props.stats.critical_risk > 0 ? 'critical' as const : undefined },
+  ];
 
   return (
-    <div class={`rounded-lg border p-4 ${variantClasses()}`}>
-      <div class="text-text-muted text-sm">{props.label}</div>
-      <div class="text-3xl font-bold mt-1 font-mono">{props.value}</div>
-    </div>
+    <section aria-label="Statistics overview">
+      <ul class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4" role="list">
+        <For each={items()}>
+          {(stat) => (
+            <li><StatCard label={stat.label} value={stat.value} severity={stat.severity} /></li>
+          )}
+        </For>
+      </ul>
+    </section>
+  );
+}
+
+function QuickActions(props: { onAction: (id: string) => void }) {
+  return (
+    <Panel as="section" class="p-4" aria-labelledby="qa-heading">
+      <h2 id="qa-heading" class="text-lg font-semibold mb-4">Quick Actions</h2>
+      <nav aria-label="Quick actions">
+        <ul class="flex flex-col gap-2" role="list">
+          <For each={QUICK_ACTIONS}>
+            {(a) => (
+              <li>
+                <button
+                  onClick={() => props.onAction(a.id)}
+                  class={cn(
+                    'w-full px-4 py-3 rounded text-left flex items-center gap-3',
+                    'bg-[var(--color-accent)]/10 text-[var(--color-accent)]',
+                    'hover:bg-[var(--color-accent)]/20 transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]'
+                  )}
+                  aria-describedby={`${a.id}-d`}
+                >
+                  <span aria-hidden="true" class="text-xl">{a.icon}</span>
+                  <span class="flex flex-col">
+                    <span class="font-medium">{a.label}</span>
+                    <span id={`${a.id}-d`} class="text-xs text-[var(--color-text-muted)]">{a.desc}</span>
+                  </span>
+                </button>
+              </li>
+            )}
+          </For>
+        </ul>
+      </nav>
+    </Panel>
+  );
+}
+
+function RecentActivity() {
+  return (
+    <Panel as="section" class="p-4" aria-labelledby="activity-heading">
+      <h2 id="activity-heading" class="text-lg font-semibold mb-4">Recent Activity</h2>
+      <EmptyState icon="📋" title="No recent activity" description="Start by analyzing a driver or syncing LOLDrivers." />
+    </Panel>
   );
 }
 
 export default function Dashboard() {
   const [stats] = createResource<DashboardStats>(getDashboardStats);
+  const handleAction = (id: string) => console.log('Action:', id);
 
   return (
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
-      
-      <Suspense fallback={<div class="text-text-muted">Loading stats...</div>}>
-        <Show when={stats()}>
-          {(s) => (
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <StatCard label="Drivers Analyzed" value={s().drivers} />
-              <StatCard label="Analysis Runs" value={s().analyses} />
-              <StatCard 
-                label="Vulnerabilities" 
-                value={s().vulnerabilities}
-                variant={s().vulnerabilities > 0 ? 'critical' : 'default'}
-              />
-              <StatCard label="LOLDrivers Hashes" value={s().loldrivers_hashes} />
-              <StatCard 
-                label="Critical Risk" 
-                value={s().critical_risk}
-                variant={s().critical_risk > 0 ? 'critical' : 'default'}
-              />
-            </div>
-          )}
-        </Show>
+    <article class="p-6 space-y-8">
+      <header>
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        <p class="text-[var(--color-text-muted)] mt-1">Overview of your driver research activity</p>
+      </header>
+
+      <Suspense fallback={
+        <section aria-label="Loading" aria-busy="true">
+          <ul class="grid grid-cols-5 gap-4" role="list">
+            {[1,2,3,4,5].map(() => <li><Skeleton height="5rem" /></li>)}
+          </ul>
+        </section>
+      }>
+        <Show when={stats()}>{(s) => <StatsGrid stats={s()} />}</Show>
       </Suspense>
 
-      <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        <div class="rounded-lg border border-border bg-surface p-4">
-          <h2 class="text-lg font-semibold mb-4">Recent Activity</h2>
-          <div class="text-text-muted text-sm">
-            No recent activity. Start by analyzing a driver or syncing LOLDrivers.
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div class="rounded-lg border border-border bg-surface p-4">
-          <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
-          <div class="flex flex-col gap-2">
-            <button class="px-4 py-2 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-left">
-              📁 Analyze Driver File
-            </button>
-            <button class="px-4 py-2 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-left">
-              🔄 Sync LOLDrivers Database
-            </button>
-            <button class="px-4 py-2 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-left">
-              🔍 Search NVD for CVEs
-            </button>
-            <button class="px-4 py-2 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors text-left">
-              📡 Start Monitoring
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6" aria-label="Dashboard panels">
+        <RecentActivity />
+        <QuickActions onAction={handleAction} />
+      </section>
+    </article>
   );
 }
