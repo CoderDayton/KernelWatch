@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Driver Search",
+  "productName": "KernelWatch",
   "version": "0.1.0",
-  "identifier": "dev.vii.driversearch",
+  "identifier": "dev.vii.kernelwatch",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Driver Search",
+        "title": "KernelWatch",
         "width": 1200,
         "height": 800,
         "minWidth": 900,
@@ -37,7 +37,7 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/driver-search"
+      "binaries/kernel-watch"
     ]
   },
   "plugins": {
@@ -45,7 +45,7 @@
       "sidecar": true,
       "scope": [
         {
-          "name": "binaries/driver-search",
+          "name": "binaries/kernel-watch",
           "sidecar": true,
           "args": true
         }

@@ -16,7 +16,7 @@ from driver_search import __version__
 from driver_search.config import get_settings
 
 app = typer.Typer(
-    name="driver-search",
+    name="kernel-watch",
     help="Vulnerable driver research tooling for blocklist contribution.",
     no_args_is_help=True,
 )
@@ -26,7 +26,7 @@ console = Console()
 def version_callback(value: bool) -> None:
     """Print version and exit."""
     if value:
-        console.print(f"driver-search v{__version__}")
+        console.print(f"kernel-watch v{__version__}")
         raise typer.Exit()
 
 
@@ -41,7 +41,7 @@ def main(
         typer.Option("--debug", "-d", help="Enable debug output"),
     ] = False,
 ) -> None:
-    """Driver Search - Vulnerable driver research tooling."""
+    """KernelWatch - Vulnerable driver research tooling."""
     if debug:
         settings = get_settings()
         settings.debug = True
@@ -488,7 +488,7 @@ def dashboard(
 
                     print(to_json(stats_to_dict(stats)))
                 else:
-                    table = Table(title="Driver Search Dashboard")
+                    table = Table(title="KernelWatch Dashboard")
                     table.add_column("Metric", style="cyan")
                     table.add_column("Value", style="green", justify="right")
 
@@ -506,7 +506,7 @@ def dashboard(
                 print(f'{{"error": "{e!s}"}}')
             else:
                 console.print(f"[yellow]Database not initialized:[/yellow] {e}")
-                console.print("Run 'driver-search sync-loldrivers' to initialize.")
+                console.print("Run 'kernel-watch sync-loldrivers' to initialize.")
 
     _run_async(_dashboard())
 

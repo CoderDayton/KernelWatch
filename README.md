@@ -1,13 +1,13 @@
 <div align="center">
-  <img src="assets/logo.svg" width="160" alt="Driver Search Logo" />
-  <h1>Driver Search</h1>
+  <img src="assets/logo.svg" width="160" alt="KernelWatch Logo" />
+  <h1>KernelWatch</h1>
   <p><strong>Proactive Vulnerable Driver Hunting</strong></p>
 
   <p>
-    <a href="https://github.com/yourusername/driver-search/actions/workflows/ci.yml">
-      <img src="https://img.shields.io/github/actions/workflow/status/yourusername/driver-search/ci.yml?branch=main&label=build&style=flat-square" alt="Build Status" />
+    <a href="https://github.com/CoderDayton/KernelWatch/actions/workflows/ci.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/CoderDayton/KernelWatch/ci.yml?branch=main&label=build&style=flat-square" alt="Build Status" />
     </a>
-    <a href="https://github.com/yourusername/driver-search/blob/main/LICENSE">
+    <a href="https://github.com/CoderDayton/KernelWatch/blob/main/LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" />
     </a>
     <img src="https://img.shields.io/badge/python-3.10+-yellow?style=flat-square&logo=python" alt="Python Version" />
@@ -22,7 +22,7 @@
 
 ## Overview
 
-**Driver Search** bridges the gap between driver discovery and defensive blocklisting. It automates the tedious process of hunting for "Bring Your Own Vulnerable Driver" (BYOVD) candidates—signed drivers that expose dangerous primitives like MSR access or physical memory mapping.
+**KernelWatch** bridges the gap between driver discovery and defensive blocklisting. It automates the tedious process of hunting for "Bring Your Own Vulnerable Driver" (BYOVD) candidates—signed drivers that expose dangerous primitives like MSR access or physical memory mapping.
 
 By combining multi-source monitoring with automated static analysis, it helps researchers identify high-risk drivers and contribute them to [LOLDrivers](https://github.com/magicsword-io/LOLDrivers) or the Microsoft HVCI blocklist.
 
@@ -50,8 +50,8 @@ By combining multi-source monitoring with automated static analysis, it helps re
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/driver-search.git
-cd driver-search
+git clone https://github.com/CoderDayton/KernelWatch.git
+cd KernelWatch
 
 # Install Python dependencies
 uv sync
@@ -75,13 +75,13 @@ Perfect for CI pipelines or server-side monitoring.
 
 ```bash
 # Analyze a specific driver
-uv run driver-search analyze /path/to/suspicious.sys
+uv run kernel-watch analyze /path/to/suspicious.sys
 
 # Monitor sources for new threats (continuous mode)
-uv run driver-search monitor --sources nvd,loldrivers
+uv run kernel-watch monitor --sources nvd,loldrivers
 
 # Export findings for LOLDrivers contribution
-uv run driver-search export loldrivers --hash <SHA256>
+uv run kernel-watch export loldrivers --hash <SHA256>
 ```
 
 ### Graphical Interface
@@ -98,9 +98,9 @@ npm run tauri:dev
 Create a `.env` file in the root directory to enable external API integrations:
 
 ```env
-DRIVER_SEARCH_NVD_API_KEY=your-key-here        # For higher rate limits
-DRIVER_SEARCH_VIRUSTOTAL_API_KEY=your-key-here # For detection ratios
-DRIVER_SEARCH_GITHUB_TOKEN=your-token-here     # For LOLDrivers sync
+KERNEL_WATCH_NVD_API_KEY=your-key-here        # For higher rate limits
+KERNEL_WATCH_VIRUSTOTAL_API_KEY=your-key-here # For detection ratios
+KERNEL_WATCH_GITHUB_TOKEN=your-token-here     # For LOLDrivers sync
 ```
 
 ## Contributing
@@ -113,3 +113,4 @@ We welcome contributions to improve detection heuristics or add new data sources
 ## License
 
 MIT © 2026
+

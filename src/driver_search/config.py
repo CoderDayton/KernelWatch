@@ -13,7 +13,7 @@ class APIKeys(BaseSettings):
     """API key configuration."""
 
     model_config = SettingsConfigDict(
-        env_prefix="DRIVER_SEARCH_",
+        env_prefix="KERNEL_WATCH_",
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
@@ -37,7 +37,7 @@ class MonitoringSettings(BaseSettings):
     """Monitoring configuration."""
 
     model_config = SettingsConfigDict(
-        env_prefix="DRIVER_SEARCH_MONITOR_",
+        env_prefix="KERNEL_WATCH_MONITOR_",
         extra="ignore",
     )
 
@@ -67,7 +67,7 @@ class AnalysisSettings(BaseSettings):
     """Analysis configuration."""
 
     model_config = SettingsConfigDict(
-        env_prefix="DRIVER_SEARCH_ANALYSIS_",
+        env_prefix="KERNEL_WATCH_ANALYSIS_",
         extra="ignore",
     )
 
@@ -89,7 +89,7 @@ class OutputSettings(BaseSettings):
     """Output/storage configuration."""
 
     model_config = SettingsConfigDict(
-        env_prefix="DRIVER_SEARCH_OUTPUT_",
+        env_prefix="KERNEL_WATCH_OUTPUT_",
         extra="ignore",
     )
 
@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     """Main application settings."""
 
     model_config = SettingsConfigDict(
-        env_prefix="DRIVER_SEARCH_",
+        env_prefix="KERNEL_WATCH_",
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",

@@ -1,7 +1,7 @@
 [project]
-name = "driver-search"
+name = "kernel-watch"
 version = "0.1.0"
-description = "Vulnerable driver research tooling for blocklist contribution"
+description = "Proactive vulnerable driver research tooling for blocklist contribution"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-driver-search = "driver_search.cli:app"
+kernel-watch = "driver_search.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -99,6 +99,7 @@ testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
+    "lefthook>=2.0.15",
     "mypy>=1.19.1",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
