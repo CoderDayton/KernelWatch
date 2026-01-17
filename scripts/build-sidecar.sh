@@ -32,6 +32,7 @@ case "$(uname -s)" in
         ;;
     MINGW*|MSYS*|CYGWIN*)
         TARGET="x86_64-pc-windows-msvc"
+        EXTENSION=".exe"
         ;;
     *)
         echo "Unknown platform"
@@ -58,5 +59,5 @@ uv run pyinstaller \
     --workpath "$PROJECT_ROOT/build/pyinstaller" \
     src/driver_search/cli.py
 
-echo "Built: $BINARIES_DIR/driver-search-$TARGET"
+echo "Built: $BINARIES_DIR/driver-search-$TARGET$EXTENSION"
 echo "Done!"

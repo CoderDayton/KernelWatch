@@ -77,20 +77,11 @@ jobs:
       - name: Install Python deps
         run: uv sync --all-extras
 
-      - name: Build Sidecar (Linux/macOS)
-        if: matrix.platform != 'windows-latest'
+      - name: Build Sidecar (All Platforms)
+        shell: bash
         run: |
           chmod +x scripts/build-sidecar.sh
           ./scripts/build-sidecar.sh
-
-      - name: Build Sidecar (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          # Manual build steps for Windows since bash script might be tricky
-          uv pip install pyinstaller
-          mkdir -p ui/src-tauri/binaries
-          uv run pyinstaller --name "driver-search-x86_64-pc-windows-msvc" --onefile --console --clean --distpath "ui/src-tauri/binaries" --specpath "build" src/driver_search/cli.py
 
       - name: Setup Node
         uses: actions/setup-node@v4
