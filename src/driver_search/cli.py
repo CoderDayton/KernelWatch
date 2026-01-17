@@ -146,6 +146,10 @@ def analyze(
         bool,
         typer.Option("--yaml", "-y", help="Generate LOLDrivers YAML output"),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Output results as JSON"),
+    ] = False,
 ) -> None:
     """Analyze driver(s) for vulnerabilities."""
     from driver_search.analyzer import AnalyzerConfig, run_analyzer
@@ -168,19 +172,29 @@ def analyze(
 
             if path.is_file():
                 result = await analyzer.analyze_file(path)
-                _print_analysis_result(result)
 
-                # Summary
-                if result.risk_score >= 50 and not result.in_loldrivers:
-                    console.print(
-                        "[bold green]→ High-value finding! "
-                        "Consider submitting to LOLDrivers.[/bold green]"
-                    )
+                if json_output:
+                    from driver_search.output.json import analysis_result_to_dict, to_json
+
+                    print(to_json(analysis_result_to_dict(result)))
+                else:
+                    _print_analysis_result(result)
+
+                    # Summary
+                    if result.risk_score >= 50 and not result.in_loldrivers:
+                        console.print(
+                            "[bold green]→ High-value finding! "
+                            "Consider submitting to LOLDrivers.[/bold green]"
+                        )
             else:
                 results = await analyzer.analyze_directory(path, recursive)
 
+                if json_output:
+                    from driver_search.output.json import analysis_result_to_dict, to_json
+
+                    print(to_json([analysis_result_to_dict(r) for r in results]))
                 # Summary table
-                if results:
+                elif results:
                     console.print("\n[bold]Summary[/bold]")
                     summary_table = Table()
                     summary_table.add_column("Driver")
@@ -232,6 +246,10 @@ def search_nvd(
         int,
         typer.Option("--limit", "-l", help="Maximum results to return"),
     ] = 50,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Output results as JSON"),
+    ] = False,
 ) -> None:
     """Search NVD for driver-related CVEs."""
     from driver_search.analyzer import run_analyzer
@@ -250,47 +268,55 @@ def search_nvd(
             cves = await analyzer.search_nvd(query, since=since_dt, limit=limit)
 
             if not cves:
-                console.print("[yellow]No CVEs found[/yellow]")
+                if json_output:
+                    print("[]")
+                else:
+                    console.print("[yellow]No CVEs found[/yellow]")
                 return
 
-            table = Table(title=f"NVD Results for '{query}'")
-            table.add_column("CVE ID", style="cyan")
-            table.add_column("CVSS", justify="right")
-            table.add_column("Published")
-            table.add_column("Description", max_width=60)
+            if json_output:
+                from driver_search.output.json import cve_entries_to_list, to_json
 
-            for cve in cves:
-                cvss = cve.get("cvss_score")
-                cvss_str = f"{cvss:.1f}" if cvss else "-"
-                if cvss and cvss >= 7.0:
-                    cvss_str = f"[red]{cvss_str}[/red]"
-                elif cvss and cvss >= 4.0:
-                    cvss_str = f"[yellow]{cvss_str}[/yellow]"
+                print(to_json(cve_entries_to_list(cves)))
+            else:
+                table = Table(title=f"NVD Results for '{query}'")
+                table.add_column("CVE ID", style="cyan")
+                table.add_column("CVSS", justify="right")
+                table.add_column("Published")
+                table.add_column("Description", max_width=60)
 
-                desc = cve.get("description", "")[:100]
-                if len(cve.get("description", "")) > 100:
-                    desc += "..."
+                for cve in cves:
+                    cvss = cve.get("cvss_score")
+                    cvss_str = f"{cvss:.1f}" if cvss else "-"
+                    if cvss and cvss >= 7.0:
+                        cvss_str = f"[red]{cvss_str}[/red]"
+                    elif cvss and cvss >= 4.0:
+                        cvss_str = f"[yellow]{cvss_str}[/yellow]"
 
-                table.add_row(
-                    cve.get("cve_id", ""),
-                    cvss_str,
-                    cve.get("published", "")[:10],
-                    desc,
-                )
+                    desc = cve.get("description", "")[:100]
+                    if len(cve.get("description", "")) > 100:
+                        desc += "..."
 
-            console.print(table)
+                    table.add_row(
+                        cve.get("cve_id", ""),
+                        cvss_str,
+                        cve.get("published", "")[:10],
+                        desc,
+                    )
 
-            # Highlight driver-related CVEs
-            driver_keywords = ["driver", "kernel", "privilege", "escalation", "ring0"]
-            driver_cves = [
-                c
-                for c in cves
-                if any(kw in c.get("description", "").lower() for kw in driver_keywords)
-            ]
-            if driver_cves:
-                console.print(
-                    f"\n[bold cyan]{len(driver_cves)} CVE(s) mention driver/kernel keywords[/bold cyan]"
-                )
+                console.print(table)
+
+                # Highlight driver-related CVEs
+                driver_keywords = ["driver", "kernel", "privilege", "escalation", "ring0"]
+                driver_cves = [
+                    c
+                    for c in cves
+                    if any(kw in c.get("description", "").lower() for kw in driver_keywords)
+                ]
+                if driver_cves:
+                    console.print(
+                        f"\n[bold cyan]{len(driver_cves)} CVE(s) mention driver/kernel keywords[/bold cyan]"
+                    )
         finally:
             await analyzer.close()
 
@@ -335,6 +361,10 @@ def sync_loldrivers(
         Path | None,
         typer.Option("--output", "-o", help="Output path for synced data"),
     ] = None,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Output results as JSON"),
+    ] = False,
 ) -> None:
     """Sync LOLDrivers database."""
     from driver_search.analyzer import run_analyzer
@@ -343,13 +373,18 @@ def sync_loldrivers(
         analyzer = await run_analyzer()
         try:
             count = await analyzer.sync_loldrivers()
-            console.print(f"[green]Successfully synced {count} driver hashes[/green]")
+
+            if json_output:
+                print(f'{{"count": {count}}}')
+            else:
+                console.print(f"[green]Successfully synced {count} driver hashes[/green]")
 
             if output:
                 # Export to file
                 stats = await analyzer.get_stats()
                 output.write_text(f"LOLDrivers hashes: {stats.get('loldrivers_hashes', 0)}\n")
-                console.print(f"[green]Stats written to {output}[/green]")
+                if not json_output:
+                    console.print(f"[green]Stats written to {output}[/green]")
         finally:
             await analyzer.close()
 
@@ -375,9 +410,9 @@ def export(
     from driver_search.db import get_database
     from driver_search.output.loldrivers import generate_loldrivers_yaml
 
-    if format not in ("loldrivers", "msrc", "json"):
+    if format not in ("loldrivers", "msrc", "json", "yara"):
         console.print(f"[red]Error:[/red] Unknown format '{format}'")
-        console.print("Supported formats: loldrivers, msrc, json")
+        console.print("Supported formats: loldrivers, msrc, json, yara")
         raise typer.Exit(1)
 
     async def _export():
@@ -388,7 +423,7 @@ def export(
                     console.print(f"[red]Error:[/red] Driver not found: {hash}")
                     raise typer.Exit(1)
 
-                # Create minimal analysis result for export
+                # Create minimal analysis result for export (TODO: Fetch full result from DB if available)
                 from driver_search.models import AnalysisResult, RiskLevel
 
                 result = AnalysisResult(
@@ -404,6 +439,24 @@ def export(
                         console.print(f"[green]Written to {output}[/green]")
                     else:
                         console.print(yaml_content)
+                elif format == "yara":
+                    from driver_search.output.yara import generate_yara_rule
+
+                    rule = generate_yara_rule(result)
+                    if output:
+                        output.write_text(rule)
+                        console.print(f"[green]Written to {output}[/green]")
+                    else:
+                        console.print(rule)
+                elif format == "json":
+                    from driver_search.output.json import analysis_result_to_dict, to_json
+
+                    json_str = to_json(analysis_result_to_dict(result), pretty=True)
+                    if output:
+                        output.write_text(json_str)
+                        console.print(f"[green]Written to {output}[/green]")
+                    else:
+                        console.print(json_str)
                 else:
                     console.print(f"[yellow]{format} export not yet implemented[/yellow]")
             else:
@@ -414,7 +467,12 @@ def export(
 
 
 @app.command()
-def dashboard() -> None:
+def dashboard(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Output results as JSON"),
+    ] = False,
+) -> None:
     """Show dashboard of findings."""
     from driver_search.db import get_database
 
@@ -425,23 +483,30 @@ def dashboard() -> None:
             async with get_database() as db:
                 stats = await db.get_stats()
 
-                table = Table(title="Driver Search Dashboard")
-                table.add_column("Metric", style="cyan")
-                table.add_column("Value", style="green", justify="right")
+                if json_output:
+                    from driver_search.output.json import stats_to_dict, to_json
 
-                table.add_row("Drivers analyzed", str(stats.get("drivers", 0)))
-                table.add_row("Analysis runs", str(stats.get("analyses", 0)))
-                table.add_row("Vulnerabilities found", str(stats.get("vulnerabilities", 0)))
-                table.add_row("LOLDrivers hashes", str(stats.get("loldrivers_hashes", 0)))
-                table.add_row("Critical risk", str(stats.get("critical_risk", 0)))
+                    print(to_json(stats_to_dict(stats)))
+                else:
+                    table = Table(title="Driver Search Dashboard")
+                    table.add_column("Metric", style="cyan")
+                    table.add_column("Value", style="green", justify="right")
 
-                console.print(table)
+                    table.add_row("Drivers analyzed", str(stats.get("drivers", 0)))
+                    table.add_row("Analysis runs", str(stats.get("analyses", 0)))
+                    table.add_row("Vulnerabilities found", str(stats.get("vulnerabilities", 0)))
+                    table.add_row("LOLDrivers hashes", str(stats.get("loldrivers_hashes", 0)))
+                    table.add_row("Critical risk", str(stats.get("critical_risk", 0)))
+
+                    console.print(table)
+                    console.print(f"\n[dim]Database:[/dim] {settings.output.db_path}")
+                    console.print(f"[dim]Cache:[/dim] {settings.output.cache_dir}")
         except Exception as e:
-            console.print(f"[yellow]Database not initialized:[/yellow] {e}")
-            console.print("Run 'driver-search sync-loldrivers' to initialize.")
-
-        console.print(f"\n[dim]Database:[/dim] {settings.output.db_path}")
-        console.print(f"[dim]Cache:[/dim] {settings.output.cache_dir}")
+            if json_output:
+                print(f'{{"error": "{e!s}"}}')
+            else:
+                console.print(f"[yellow]Database not initialized:[/yellow] {e}")
+                console.print("Run 'driver-search sync-loldrivers' to initialize.")
 
     _run_async(_dashboard())
 

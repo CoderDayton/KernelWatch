@@ -59,6 +59,7 @@ def generate_loldrivers_yaml(
     # Build the YAML structure
     entry = {
         "Name": driver.original_filename or driver.name,
+        "Description": description,
         "Author": author,
         "Created": datetime.now().strftime("%Y-%m-%d"),
         "MitreID": "T1068",  # Exploitation for Privilege Escalation

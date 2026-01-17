@@ -1,0 +1,33 @@
+# Lefthook configuration
+# Refer to https://github.com/evilmartians/lefthook/blob/master/docs/configuration.md
+
+pre-commit:
+  parallel: true
+  commands:
+    backend-lint:
+      glob: "*.py"
+      run: uv run ruff check {staged_files}
+    backend-format:
+      glob: "*.py"
+      run: uv run ruff format --check {staged_files}
+    backend-types:
+      glob: "*.py"
+      run: uv run mypy src/
+    frontend-typecheck:
+      root: "ui/"
+      glob: "**/*.{ts,tsx}"
+      run: npm run build # runs tsc -b && vite build
+    rust-fmt:
+      root: "ui/src-tauri/"
+      glob: "**/*.rs"
+      run: cargo fmt -- --check
+    rust-clippy:
+      root: "ui/src-tauri/"
+      glob: "**/*.rs"
+      run: cargo clippy -- -D warnings
+
+pre-push:
+  parallel: false
+  commands:
+    backend-test:
+      run: uv run pytest tests/

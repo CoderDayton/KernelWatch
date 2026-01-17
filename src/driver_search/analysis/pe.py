@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -51,6 +51,10 @@ def analyze_pe(file_path: str | Path) -> PEAnalysisResult:
 
     try:
         pe = pe_module.PE(str(path), fast_load=False)
+
+        # Calculate and update imphash
+        driver.hashes = replace(driver.hashes, imphash=pe.get_imphash())
+
         _analyze_pe_headers(pe, driver, result)
         _analyze_imports(pe, driver, result)
         _analyze_exports(pe, driver, result)

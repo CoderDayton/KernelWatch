@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS drivers (
     md5 TEXT,
     authentihash_sha256 TEXT,
     authentihash_sha1 TEXT,
+    imphash TEXT,
     name TEXT NOT NULL,
     file_path TEXT,
     file_size INTEGER,
@@ -173,12 +174,12 @@ class Database:
         await self._conn.execute(
             """
             INSERT OR REPLACE INTO drivers (
-                sha256, sha1, md5, authentihash_sha256, authentihash_sha1,
+                sha256, sha1, md5, authentihash_sha256, authentihash_sha1, imphash,
                 name, file_path, file_size, version, description, vendor,
                 original_filename, product_name, internal_name, compile_time,
                 signature_json, ioctls_json, imports_json, exports_json,
                 sections_json, first_seen, source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 driver.hashes.sha256,
@@ -186,6 +187,7 @@ class Database:
                 driver.hashes.md5,
                 driver.hashes.authentihash_sha256,
                 driver.hashes.authentihash_sha1,
+                driver.hashes.imphash,
                 driver.name,
                 driver.file_path,
                 driver.file_size,
@@ -404,6 +406,7 @@ class Database:
                 md5=row["md5"],
                 authentihash_sha256=row["authentihash_sha256"],
                 authentihash_sha1=row["authentihash_sha1"],
+                imphash=row["imphash"] if "imphash" in row else None,
             ),
             file_path=row["file_path"],
             file_size=row["file_size"],

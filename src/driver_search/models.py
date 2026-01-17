@@ -41,6 +41,7 @@ class DriverHash:
     md5: str | None = None
     authentihash_sha256: str | None = None
     authentihash_sha1: str | None = None
+    imphash: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
