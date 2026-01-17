@@ -5,14 +5,14 @@ pre-commit:
   parallel: true
   commands:
     backend-lint:
-      glob: "*.py"
+      glob: "**/*.py"
       run: uv run ruff check {staged_files}
     backend-format:
-      glob: "*.py"
+      glob: "**/*.py"
       run: uv run ruff format --check {staged_files}
     backend-types:
-      glob: "*.py"
-      run: uv run mypy src/
+      glob: "**/*.py"
+      run: uv run mypy src/ tests/
     frontend-typecheck:
       root: "ui/"
       glob: "**/*.{ts,tsx}"
