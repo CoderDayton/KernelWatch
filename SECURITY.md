@@ -17,7 +17,7 @@ If you have discovered a security vulnerability in KernelWatch (e.g., local priv
 
 ### Reporting Process
 
-1.  Email the maintainers at `security@example.com` (Replace with actual email or link to GitHub Security Advisory if enabled).
+1.  Contact the maintainers via email at `coderdayton14@gmail.com` or discord (xxbbl).
 2.  Include details about the vulnerability, steps to reproduce, and potential impact.
 3.  We will acknowledge receipt within 48 hours.
 4.  We will provide a timeline for the fix and coordinate the release.
