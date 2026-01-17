@@ -41,3 +41,7 @@ htmlcov/
 *.sys
 *.dll
 *.exe
+ui/node_modules/
+ui/dist/
+build/
+*.spec

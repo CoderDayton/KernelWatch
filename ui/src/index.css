@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* Base theme - using CSS custom properties directly */
+:root {
+  /* Colors - Dark security/hacker aesthetic */
+  --color-background: #0a0a0f;
+  --color-surface: #12121a;
+  --color-surface-raised: #1a1a24;
+  --color-border: #2a2a3a;
+  --color-border-bright: #3a3a4a;
+  
+  /* Accent colors */
+  --color-accent: #00d4aa;
+  --color-accent-dim: #00a888;
+  --color-accent-bright: #00ffcc;
+  
+  /* Risk level colors */
+  --color-critical: #ff3366;
+  --color-high: #ff6644;
+  --color-medium: #ffaa00;
+  --color-low: #44aaff;
+  --color-info: #888899;
+  
+  /* Text */
+  --color-text: #e8e8f0;
+  --color-text-muted: #888899;
+  --color-text-dim: #555566;
+  
+  /* Semantic */
+  --color-success: #00cc88;
+  --color-warning: #ffaa00;
+  --color-error: #ff4466;
+}
+
+/* Base styles */
+html {
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-bright);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-dim);
+}
+
+/* Code/mono text */
+code, pre, .mono {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+/* Selection */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-background);
+}

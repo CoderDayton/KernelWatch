@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
 from driver_search import __version__
@@ -44,6 +47,83 @@ def main(
         settings.debug = True
 
 
+def _run_async(coro):
+    """Run async function in sync context."""
+    return asyncio.get_event_loop().run_until_complete(coro)
+
+
+def _format_risk_level(level: str, score: int) -> str:
+    """Format risk level with color."""
+    colors = {
+        "critical": "red bold",
+        "high": "red",
+        "medium": "yellow",
+        "low": "blue",
+        "info": "dim",
+    }
+    color = colors.get(level, "white")
+    return f"[{color}]{level.upper()}[/{color}] ({score})"
+
+
+def _print_analysis_result(result) -> None:
+    """Pretty print an analysis result."""
+    driver = result.driver
+
+    # Header
+    console.print(
+        Panel(
+            f"[bold]{driver.name}[/bold]\nSHA256: [dim]{driver.hashes.sha256}[/dim]",
+            title="Driver Analysis",
+            border_style="cyan",
+        )
+    )
+
+    # Info table
+    info_table = Table(show_header=False, box=None, padding=(0, 2))
+    info_table.add_column("Field", style="cyan")
+    info_table.add_column("Value")
+
+    if driver.vendor:
+        info_table.add_row("Vendor", driver.vendor)
+    if driver.version:
+        info_table.add_row("Version", driver.version)
+    if driver.description:
+        info_table.add_row("Description", driver.description[:80])
+    if driver.signature:
+        info_table.add_row("Signer", driver.signature.signer[:60])
+    if driver.compile_time:
+        info_table.add_row("Compiled", driver.compile_time.strftime("%Y-%m-%d"))
+
+    console.print(info_table)
+    console.print()
+
+    # Risk assessment
+    console.print(f"Risk: {_format_risk_level(result.risk_level.value, result.risk_score)}")
+
+    if result.in_loldrivers:
+        console.print("[yellow]⚠ Already in LOLDrivers[/yellow]")
+    else:
+        console.print("[green]✓ Not in LOLDrivers (potential new finding)[/green]")
+
+    if result.detection_ratio:
+        console.print(f"VirusTotal: {result.detection_ratio}")
+
+    # Dangerous imports
+    if result.dangerous_imports:
+        console.print("\n[bold red]Dangerous Imports:[/bold red]")
+        for imp in result.dangerous_imports:
+            console.print(f"  • {imp}")
+
+    # Vulnerabilities
+    if result.vulnerabilities:
+        console.print("\n[bold red]Potential Vulnerabilities:[/bold red]")
+        for vuln in result.vulnerabilities:
+            confidence = f"[dim]({vuln.confidence:.0%})[/dim]"
+            console.print(f"  • {vuln.vuln_type.value}: {vuln.description} {confidence}")
+
+    console.print()
+
+
 @app.command()
 def analyze(
     path: Annotated[
@@ -56,23 +136,86 @@ def analyze(
     ] = False,
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="Output file for results"),
+        typer.Option("--output", "-o", help="Output directory for YAML files"),
     ] = None,
+    no_vt: Annotated[
+        bool,
+        typer.Option("--no-vt", help="Skip VirusTotal lookup"),
+    ] = False,
+    yaml: Annotated[
+        bool,
+        typer.Option("--yaml", "-y", help="Generate LOLDrivers YAML output"),
+    ] = False,
 ) -> None:
     """Analyze driver(s) for vulnerabilities."""
+    from driver_search.analyzer import AnalyzerConfig, run_analyzer
+
     if not path.exists():
         console.print(f"[red]Error:[/red] Path does not exist: {path}")
         raise typer.Exit(1)
 
-    if path.is_file():
-        console.print(f"Analyzing: {path}")
-        # TODO: Implement single file analysis
-        console.print("[yellow]Analysis not yet implemented[/yellow]")
-    else:
-        pattern = "**/*.sys" if recursive else "*.sys"
-        drivers = list(path.glob(pattern))
-        console.print(f"Found {len(drivers)} driver(s) to analyze")
-        # TODO: Implement batch analysis
+    config = AnalyzerConfig(
+        check_virustotal=not no_vt,
+        generate_yaml=yaml,
+        yaml_output_dir=output or Path("data/reports"),
+    )
+
+    async def _analyze():
+        analyzer = await run_analyzer(config)
+        try:
+            # Sync LOLDrivers first for accurate "new finding" detection
+            await analyzer.sync_loldrivers()
+
+            if path.is_file():
+                result = await analyzer.analyze_file(path)
+                _print_analysis_result(result)
+
+                # Summary
+                if result.risk_score >= 50 and not result.in_loldrivers:
+                    console.print(
+                        "[bold green]→ High-value finding! "
+                        "Consider submitting to LOLDrivers.[/bold green]"
+                    )
+            else:
+                results = await analyzer.analyze_directory(path, recursive)
+
+                # Summary table
+                if results:
+                    console.print("\n[bold]Summary[/bold]")
+                    summary_table = Table()
+                    summary_table.add_column("Driver")
+                    summary_table.add_column("Risk")
+                    summary_table.add_column("In Blocklist")
+                    summary_table.add_column("Dangerous Imports")
+
+                    for r in sorted(results, key=lambda x: x.risk_score, reverse=True):
+                        blocklist = "Yes" if r.in_loldrivers else "[green]No[/green]"
+                        imports = ", ".join(r.dangerous_imports[:3])
+                        if len(r.dangerous_imports) > 3:
+                            imports += f" +{len(r.dangerous_imports) - 3}"
+
+                        summary_table.add_row(
+                            r.driver.name[:30],
+                            _format_risk_level(r.risk_level.value, r.risk_score),
+                            blocklist,
+                            imports or "-",
+                        )
+
+                    console.print(summary_table)
+
+                    # Highlight new findings
+                    new_findings = [
+                        r for r in results if not r.in_loldrivers and r.risk_score >= 50
+                    ]
+                    if new_findings:
+                        console.print(
+                            f"\n[bold green]Found {len(new_findings)} potential new "
+                            f"vulnerable driver(s) not in blocklists![/bold green]"
+                        )
+        finally:
+            await analyzer.close()
+
+    _run_async(_analyze())
 
 
 @app.command()
@@ -91,9 +234,67 @@ def search_nvd(
     ] = 50,
 ) -> None:
     """Search NVD for driver-related CVEs."""
-    console.print(f"Searching NVD for: {query}")
-    # TODO: Implement NVD search
-    console.print("[yellow]NVD search not yet implemented[/yellow]")
+    from driver_search.analyzer import run_analyzer
+
+    since_dt = None
+    if since:
+        try:
+            since_dt = datetime.strptime(since, "%Y-%m-%d")
+        except ValueError:
+            console.print("[red]Error:[/red] Invalid date format. Use YYYY-MM-DD")
+            raise typer.Exit(1)
+
+    async def _search():
+        analyzer = await run_analyzer()
+        try:
+            cves = await analyzer.search_nvd(query, since=since_dt, limit=limit)
+
+            if not cves:
+                console.print("[yellow]No CVEs found[/yellow]")
+                return
+
+            table = Table(title=f"NVD Results for '{query}'")
+            table.add_column("CVE ID", style="cyan")
+            table.add_column("CVSS", justify="right")
+            table.add_column("Published")
+            table.add_column("Description", max_width=60)
+
+            for cve in cves:
+                cvss = cve.get("cvss_score")
+                cvss_str = f"{cvss:.1f}" if cvss else "-"
+                if cvss and cvss >= 7.0:
+                    cvss_str = f"[red]{cvss_str}[/red]"
+                elif cvss and cvss >= 4.0:
+                    cvss_str = f"[yellow]{cvss_str}[/yellow]"
+
+                desc = cve.get("description", "")[:100]
+                if len(cve.get("description", "")) > 100:
+                    desc += "..."
+
+                table.add_row(
+                    cve.get("cve_id", ""),
+                    cvss_str,
+                    cve.get("published", "")[:10],
+                    desc,
+                )
+
+            console.print(table)
+
+            # Highlight driver-related CVEs
+            driver_keywords = ["driver", "kernel", "privilege", "escalation", "ring0"]
+            driver_cves = [
+                c
+                for c in cves
+                if any(kw in c.get("description", "").lower() for kw in driver_keywords)
+            ]
+            if driver_cves:
+                console.print(
+                    f"\n[bold cyan]{len(driver_cves)} CVE(s) mention driver/kernel keywords[/bold cyan]"
+                )
+        finally:
+            await analyzer.close()
+
+    _run_async(_search())
 
 
 @app.command()
@@ -116,11 +317,16 @@ def monitor(
     ] = False,
 ) -> None:
     """Monitor sources for new vulnerable drivers."""
+    from driver_search.monitor import run_monitor
+
     source_list = [s.strip() for s in sources.split(",")]
-    console.print(f"Monitoring sources: {', '.join(source_list)}")
-    console.print(f"Poll interval: {interval} hours")
-    # TODO: Implement monitoring loop
-    console.print("[yellow]Monitoring not yet implemented[/yellow]")
+    console.print(f"[cyan]Monitoring sources:[/cyan] {', '.join(source_list)}")
+
+    if not once:
+        console.print(f"[cyan]Poll interval:[/cyan] {interval} hours")
+        console.print("[dim]Press Ctrl+C to stop[/dim]\n")
+
+    _run_async(run_monitor(source_list, interval_hours=interval, once=once))
 
 
 @app.command()
@@ -131,9 +337,23 @@ def sync_loldrivers(
     ] = None,
 ) -> None:
     """Sync LOLDrivers database."""
-    console.print("Syncing LOLDrivers database...")
-    # TODO: Implement LOLDrivers sync
-    console.print("[yellow]LOLDrivers sync not yet implemented[/yellow]")
+    from driver_search.analyzer import run_analyzer
+
+    async def _sync():
+        analyzer = await run_analyzer()
+        try:
+            count = await analyzer.sync_loldrivers()
+            console.print(f"[green]Successfully synced {count} driver hashes[/green]")
+
+            if output:
+                # Export to file
+                stats = await analyzer.get_stats()
+                output.write_text(f"LOLDrivers hashes: {stats.get('loldrivers_hashes', 0)}\n")
+                console.print(f"[green]Stats written to {output}[/green]")
+        finally:
+            await analyzer.close()
+
+    _run_async(_sync())
 
 
 @app.command()
@@ -144,7 +364,7 @@ def export(
     ],
     hash: Annotated[
         str | None,
-        typer.Option("--hash", "-h", help="Driver hash to export"),
+        typer.Option("--hash", help="Driver hash to export"),
     ] = None,
     output: Annotated[
         Path | None,
@@ -152,30 +372,78 @@ def export(
     ] = None,
 ) -> None:
     """Export analysis results in various formats."""
-    console.print(f"Exporting in {format} format")
-    # TODO: Implement export
-    console.print("[yellow]Export not yet implemented[/yellow]")
+    from driver_search.db import get_database
+    from driver_search.output.loldrivers import generate_loldrivers_yaml
+
+    if format not in ("loldrivers", "msrc", "json"):
+        console.print(f"[red]Error:[/red] Unknown format '{format}'")
+        console.print("Supported formats: loldrivers, msrc, json")
+        raise typer.Exit(1)
+
+    async def _export():
+        async with get_database() as db:
+            if hash:
+                driver = await db.get_driver(hash)
+                if not driver:
+                    console.print(f"[red]Error:[/red] Driver not found: {hash}")
+                    raise typer.Exit(1)
+
+                # Create minimal analysis result for export
+                from driver_search.models import AnalysisResult, RiskLevel
+
+                result = AnalysisResult(
+                    driver=driver,
+                    risk_level=RiskLevel.MEDIUM,
+                    risk_score=50,
+                )
+
+                if format == "loldrivers":
+                    yaml_content = generate_loldrivers_yaml(result)
+                    if output:
+                        output.write_text(yaml_content)
+                        console.print(f"[green]Written to {output}[/green]")
+                    else:
+                        console.print(yaml_content)
+                else:
+                    console.print(f"[yellow]{format} export not yet implemented[/yellow]")
+            else:
+                console.print("[red]Error:[/red] --hash is required")
+                raise typer.Exit(1)
+
+    _run_async(_export())
 
 
 @app.command()
 def dashboard() -> None:
     """Show dashboard of findings."""
+    from driver_search.db import get_database
+
     settings = get_settings()
 
-    table = Table(title="Driver Search Dashboard")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", style="green")
+    async def _dashboard():
+        try:
+            async with get_database() as db:
+                stats = await db.get_stats()
 
-    # TODO: Get actual stats from database
-    table.add_row("Drivers analyzed", "0")
-    table.add_row("Vulnerabilities found", "0")
-    table.add_row("In LOLDrivers", "0")
-    table.add_row("Not in blocklist", "0")
-    table.add_row("High risk", "0")
+                table = Table(title="Driver Search Dashboard")
+                table.add_column("Metric", style="cyan")
+                table.add_column("Value", style="green", justify="right")
 
-    console.print(table)
-    console.print(f"\nDatabase: {settings.output.db_path}")
-    console.print(f"Cache: {settings.output.cache_dir}")
+                table.add_row("Drivers analyzed", str(stats.get("drivers", 0)))
+                table.add_row("Analysis runs", str(stats.get("analyses", 0)))
+                table.add_row("Vulnerabilities found", str(stats.get("vulnerabilities", 0)))
+                table.add_row("LOLDrivers hashes", str(stats.get("loldrivers_hashes", 0)))
+                table.add_row("Critical risk", str(stats.get("critical_risk", 0)))
+
+                console.print(table)
+        except Exception as e:
+            console.print(f"[yellow]Database not initialized:[/yellow] {e}")
+            console.print("Run 'driver-search sync-loldrivers' to initialize.")
+
+        console.print(f"\n[dim]Database:[/dim] {settings.output.db_path}")
+        console.print(f"[dim]Cache:[/dim] {settings.output.cache_dir}")
+
+    _run_async(_dashboard())
 
 
 if __name__ == "__main__":

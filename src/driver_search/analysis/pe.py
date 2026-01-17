@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from driver_search.models import (
     DANGEROUS_IMPORTS,
     Driver,
+    IOCTLInfo,
     SignatureInfo,
     Vulnerability,
     VulnerabilityType,
@@ -56,6 +57,7 @@ def analyze_pe(file_path: str | Path) -> PEAnalysisResult:
         _analyze_sections(pe, driver, result)
         _analyze_signature(path, driver)
         _detect_ioctl_patterns(pe, driver, result)
+        _run_ioctl_disassembly(pe, driver, result)
         pe.close()
     except Exception as e:
         result.errors.append(f"PE parsing error: {e}")
@@ -267,3 +269,59 @@ def calculate_risk_score(result: PEAnalysisResult, in_loldrivers: bool = False) 
 
     # Cap at 100
     return min(score, 100)
+
+
+def _run_ioctl_disassembly(
+    pe: pefile.PE,
+    driver: Driver,
+    result: PEAnalysisResult,
+) -> None:
+    """Run IOCTL disassembly analysis if capstone is available."""
+    try:
+        from driver_search.analysis.disasm import analyze_driver_ioctls
+    except ImportError:
+        return  # Capstone not available
+
+    try:
+        ioctl_result = analyze_driver_ioctls(pe)
+
+        # Convert IOCTL codes to IOCTLInfo objects
+        for code in ioctl_result.ioctl_codes:
+            driver.ioctls.append(
+                IOCTLInfo(
+                    code=code.raw,
+                    device_type=code.device_type,
+                    function=code.function,
+                    method=code.method.value,
+                    access=code.access.value,
+                )
+            )
+
+        # Add vulnerabilities from disassembly
+        for vuln_desc in ioctl_result.vulnerabilities:
+            # Determine vulnerability type from description
+            if "MSR" in vuln_desc:
+                vuln_type = VulnerabilityType.MSR_WRITE
+            elif "Port I/O" in vuln_desc:
+                vuln_type = VulnerabilityType.PORT_IO
+            elif "Control register" in vuln_desc:
+                vuln_type = VulnerabilityType.ARBITRARY_KERNEL_WRITE
+            elif "METHOD_NEITHER" in vuln_desc:
+                vuln_type = VulnerabilityType.ARBITRARY_KERNEL_READ
+            else:
+                vuln_type = VulnerabilityType.UNKNOWN
+
+            result.potential_vulns.append(
+                Vulnerability(
+                    vuln_type=vuln_type,
+                    description=vuln_desc,
+                    confidence=0.85,  # Disassembly-based detection is more reliable
+                )
+            )
+
+        # Add suspicious patterns to strings
+        for pattern_name, addr, context in ioctl_result.dangerous_patterns:
+            result.suspicious_strings.append(f"Disasm: {pattern_name} at 0x{addr:X} ({context})")
+
+    except Exception as e:
+        result.errors.append(f"IOCTL disassembly error: {e}")
