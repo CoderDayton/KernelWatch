@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
@@ -47,7 +47,7 @@ def main(
         settings.debug = True
 
 
-def _run_async(coro):
+def _run_async(coro: Any) -> Any:
     """Run async function in sync context."""
     return asyncio.get_event_loop().run_until_complete(coro)
 
@@ -65,7 +65,7 @@ def _format_risk_level(level: str, score: int) -> str:
     return f"[{color}]{level.upper()}[/{color}] ({score})"
 
 
-def _print_analysis_result(result) -> None:
+def _print_analysis_result(result: Any) -> None:
     """Pretty print an analysis result."""
     driver = result.driver
 
@@ -164,7 +164,7 @@ def analyze(
         yaml_output_dir=output or Path("data/reports"),
     )
 
-    async def _analyze():
+    async def _analyze() -> None:
         analyzer = await run_analyzer(config)
         try:
             # Sync LOLDrivers first for accurate "new finding" detection
@@ -258,11 +258,11 @@ def search_nvd(
     if since:
         try:
             since_dt = datetime.strptime(since, "%Y-%m-%d")
-        except ValueError:
+        except ValueError as err:
             console.print("[red]Error:[/red] Invalid date format. Use YYYY-MM-DD")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from err
 
-    async def _search():
+    async def _search() -> None:
         analyzer = await run_analyzer()
         try:
             cves = await analyzer.search_nvd(query, since=since_dt, limit=limit)
@@ -314,9 +314,11 @@ def search_nvd(
                     if any(kw in c.get("description", "").lower() for kw in driver_keywords)
                 ]
                 if driver_cves:
-                    console.print(
-                        f"\n[bold cyan]{len(driver_cves)} CVE(s) mention driver/kernel keywords[/bold cyan]"
+                    msg = (
+                        f"\n[bold cyan]{len(driver_cves)} CVE(s) "
+                        "mention driver/kernel keywords[/bold cyan]"
                     )
+                    console.print(msg)
         finally:
             await analyzer.close()
 
@@ -369,7 +371,7 @@ def sync_loldrivers(
     """Sync LOLDrivers database."""
     from driver_search.analyzer import run_analyzer
 
-    async def _sync():
+    async def _sync() -> None:
         analyzer = await run_analyzer()
         try:
             count = await analyzer.sync_loldrivers()
@@ -415,7 +417,7 @@ def export(
         console.print("Supported formats: loldrivers, msrc, json, yara")
         raise typer.Exit(1)
 
-    async def _export():
+    async def _export() -> None:
         async with get_database() as db:
             if hash:
                 driver = await db.get_driver(hash)
@@ -423,7 +425,8 @@ def export(
                     console.print(f"[red]Error:[/red] Driver not found: {hash}")
                     raise typer.Exit(1)
 
-                # Create minimal analysis result for export (TODO: Fetch full result from DB if available)
+                # Create minimal analysis result for export
+                # (TODO: Fetch full result from DB if available)
                 from driver_search.models import AnalysisResult, RiskLevel
 
                 result = AnalysisResult(
@@ -478,7 +481,7 @@ def dashboard(
 
     settings = get_settings()
 
-    async def _dashboard():
+    async def _dashboard() -> None:
         try:
             async with get_database() as db:
                 stats = await db.get_stats()

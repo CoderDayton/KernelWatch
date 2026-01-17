@@ -32,7 +32,7 @@ def to_json(obj: Any, pretty: bool = False) -> str:
     return json.dumps(obj, cls=JSONEncoder, indent=indent)
 
 
-def analysis_result_to_dict(result) -> dict[str, Any]:
+def analysis_result_to_dict(result: Any) -> dict[str, Any]:
     """Convert AnalysisResult to JSON-serializable dict."""
     driver = result.driver
 
@@ -82,7 +82,7 @@ def stats_to_dict(stats: dict[str, int]) -> dict[str, Any]:
     }
 
 
-def cve_entries_to_list(entries: list) -> list[dict[str, Any]]:
+def cve_entries_to_list(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Format CVE entries for JSON output."""
     return [
         {

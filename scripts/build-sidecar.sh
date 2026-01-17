@@ -9,7 +9,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 UI_DIR="$PROJECT_ROOT/ui"
 BINARIES_DIR="$UI_DIR/src-tauri/binaries"
 
-echo "Building driver-search sidecar binary..."
+echo "Building kernel-watch sidecar binary..."
 
 # Ensure binaries directory exists
 mkdir -p "$BINARIES_DIR"
@@ -50,7 +50,7 @@ uv pip install pyinstaller
 
 # Create the executable
 uv run pyinstaller \
-    --name "driver-search-$TARGET" \
+    --name "kernel-watch-$TARGET" \
     --onefile \
     --console \
     --clean \
@@ -59,5 +59,5 @@ uv run pyinstaller \
     --workpath "$PROJECT_ROOT/build/pyinstaller" \
     src/driver_search/cli.py
 
-echo "Built: $BINARIES_DIR/driver-search-$TARGET$EXTENSION"
+echo "Built: $BINARIES_DIR/kernel-watch-$TARGET$EXTENSION"
 echo "Done!"

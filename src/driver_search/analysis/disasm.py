@@ -153,8 +153,9 @@ class IOCTLDisassembler:
         try:
             from capstone import CS_ARCH_X86, CS_MODE_64, Cs
 
-            self._cs = Cs(CS_ARCH_X86, CS_MODE_64)
-            self._cs.detail = True
+            self._cs: Cs | None = Cs(CS_ARCH_X86, CS_MODE_64)
+            if self._cs:
+                self._cs.detail = True
         except ImportError:
             self._cs = None
 
@@ -211,7 +212,7 @@ class IOCTLDisassembler:
             val = struct.unpack("<I", data[i : i + 4])[0]
 
             # Skip if already seen or obviously not an IOCTL
-            if val in seen or val == 0 or val == 0xFFFFFFFF:
+            if val in seen or val in {0, 0xFFFFFFFF}:
                 continue
 
             # Check if it looks like a valid IOCTL code
@@ -308,15 +309,16 @@ class IOCTLDisassembler:
             code = data[offset : offset + self._max_instructions * 15]  # ~15 bytes max per x64 insn
 
             for insn in self._cs.disasm(code, address):
-                func.instructions.append((insn.address, insn.mnemonic, insn.op_str, insn.bytes))
+                insn_bytes = bytes(insn.bytes)
+                func.instructions.append((insn.address, insn.mnemonic, insn.op_str, insn_bytes))
                 func.size += insn.size
 
                 # Check for dangerous patterns
-                if insn.bytes[:2] in DANGEROUS_PATTERNS:
-                    pattern_name = DANGEROUS_PATTERNS[insn.bytes[:2]]
+                if insn_bytes[:2] in DANGEROUS_PATTERNS:
+                    pattern_name = DANGEROUS_PATTERNS[insn_bytes[:2]]
                     func.dangerous_instructions.append((insn.address, insn.mnemonic, pattern_name))
-                elif insn.bytes[:1] in [bytes([b]) for b in b"\xec\xed\xee\xef\xe4\xe5\xe6\xe7"]:
-                    pattern_name = DANGEROUS_PATTERNS.get(insn.bytes[:1], "port_io")
+                elif insn_bytes[:1] in [bytes([b]) for b in b"\xec\xed\xee\xef\xe4\xe5\xe6\xe7"]:
+                    pattern_name = DANGEROUS_PATTERNS.get(insn_bytes[:1], "port_io")
                     func.dangerous_instructions.append((insn.address, insn.mnemonic, pattern_name))
 
                 # Track call targets

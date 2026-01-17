@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
@@ -20,7 +20,7 @@ def generate_loldrivers_yaml(
     driver = result.driver
 
     # Build known vulnerable samples list
-    samples = [
+    samples: list[dict[str, Any]] = [
         {
             "Filename": driver.original_filename or driver.name,
             "SHA256": driver.hashes.sha256,
@@ -33,22 +33,24 @@ def generate_loldrivers_yaml(
         samples[0]["MD5"] = driver.hashes.md5
     if driver.hashes.authentihash_sha256:
         samples[0]["Authentihash"] = {
-            "SHA256": driver.hashes.authentihash_sha256,
+            "SHA256": str(driver.hashes.authentihash_sha256),
         }
         if driver.hashes.authentihash_sha1:
-            samples[0]["Authentihash"]["SHA1"] = driver.hashes.authentihash_sha1
+            auth_hash: Any = samples[0]["Authentihash"]
+            if isinstance(auth_hash, dict):
+                auth_hash["SHA1"] = str(driver.hashes.authentihash_sha1)
 
     if driver.signature:
         samples[0]["Signature"] = driver.signature.signer
     if driver.vendor:
         samples[0]["Company"] = driver.vendor
     if driver.description:
-        samples[0]["Description"] = driver.description
+        samples[0]["Description"] = str(driver.description)
     if driver.product_name:
-        samples[0]["Product"] = driver.product_name
+        samples[0]["Product"] = str(driver.product_name)
 
     # Build vulnerability description
-    vuln_descriptions = []
+    vuln_descriptions: list[str] = []
     for vuln in result.vulnerabilities:
         vuln_descriptions.append(f"- {vuln.vuln_type.value}: {vuln.description}")
 
@@ -57,7 +59,7 @@ def generate_loldrivers_yaml(
         description += "\n\nDetected capabilities:\n" + "\n".join(vuln_descriptions)
 
     # Build the YAML structure
-    entry = {
+    entry: dict[str, Any] = {
         "Name": driver.original_filename or driver.name,
         "Description": description,
         "Author": author,
@@ -89,13 +91,14 @@ def generate_loldrivers_yaml(
         entry["Acknowledgement"] = {"Handle": author, "Notes": result.notes}
 
     # Use safe_dump with proper formatting
-    return yaml.safe_dump(
+    output_yaml: str = yaml.safe_dump(
         entry,
         default_flow_style=False,
         sort_keys=False,
         allow_unicode=True,
         width=120,
     )
+    return output_yaml
 
 
 def generate_loldrivers_filename(result: AnalysisResult) -> str:

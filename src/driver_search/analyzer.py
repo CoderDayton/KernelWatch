@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -228,7 +229,7 @@ class Analyzer:
         query: str,
         since: datetime | None = None,
         limit: int = 50,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Search NVD for driver-related CVEs."""
         if not self._nvd:
             raise RuntimeError("Analyzer not initialized")
@@ -244,7 +245,7 @@ class Analyzer:
             for error in result.errors:
                 console.print(f"[yellow]Warning:[/yellow] {error}")
 
-        cve_entries = result.metadata.get("cve_entries", [])[:limit]
+        cve_entries: list[dict[str, Any]] = result.metadata.get("cve_entries", [])[:limit]
         console.print(f"[green]Found {len(cve_entries)} CVE(s)[/green]")
 
         return cve_entries

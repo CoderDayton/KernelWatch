@@ -61,7 +61,7 @@ class Source(ABC):
         ...
 
     @abstractmethod
-    async def fetch_incremental(
+    def fetch_incremental(
         self,
         since: datetime | None = None,
         **kwargs: Any,

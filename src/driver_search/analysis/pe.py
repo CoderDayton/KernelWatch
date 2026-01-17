@@ -153,7 +153,7 @@ def _analyze_sections(pe: pefile.PE, driver: Driver, result: PEAnalysisResult) -
 def _analyze_signature(file_path: Path, driver: Driver) -> None:
     """Extract Authenticode signature information."""
     try:
-        from signify.authenticode import SignedPEFile
+        from signify.authenticode import SignedPEFile  # type: ignore[attr-defined]
 
         with open(file_path, "rb") as f:
             signed_pe = SignedPEFile(f)

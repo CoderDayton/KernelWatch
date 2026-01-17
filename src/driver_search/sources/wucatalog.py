@@ -56,7 +56,8 @@ class WUCatalogSource(Source):
                 # 1. Search
                 update_ids = await self._search(q, limit)
 
-                # 2. Get download links (batching is possible but let's do one by one for simplicity/reliability)
+                # 2. Get download links
+                # (batching is possible but let's do one by one for simplicity/reliability)
                 for uid, title in update_ids:
                     try:
                         urls = await self._get_download_links(uid)
@@ -73,17 +74,21 @@ class WUCatalogSource(Source):
 
         return result
 
-    async def fetch_incremental(
+    def fetch_incremental(
         self,
         since: datetime | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[SourceResult]:
         """Fetch new drivers."""
-        # WUC doesn't support "since" parameter easily without parsing dates from the table
-        # which format varies. For now, we perform a standard fetch.
-        res = await self.fetch(limit=5)
-        if res.total_items > 0:
-            yield res
+
+        async def _generator() -> AsyncIterator[SourceResult]:
+            # WUC doesn't support "since" parameter easily without parsing dates from the table
+            # which format varies. For now, we perform a standard fetch.
+            res = await self.fetch(limit=5)
+            if res.total_items > 0:
+                yield res
+
+        return _generator()
 
     async def _search(self, query: str, limit: int) -> list[tuple[str, str]]:
         """Search catalog and return list of (updateId, title)."""
@@ -102,15 +107,12 @@ class WUCatalogSource(Source):
 
         for row in rows[:limit]:
             # Extract ID
-            # Usually in a hidden input or data attribute, or button
-            # Button id="..._goToDetails" -> extract GUID
-
-            # Let's try to find the input with the ID
             inputs = row.select("input[id$='_updateId']")
             if not inputs:
                 continue
 
-            uid = inputs[0].get("value")
+            uid_raw = inputs[0].get("value")
+            uid = str(uid_raw) if uid_raw else ""
 
             # Extract title
             title_cell = row.select_one("td.resultsColumn")
@@ -127,13 +129,14 @@ class WUCatalogSource(Source):
         response = await self._client.get(
             DOWNLOAD_URL,
             params={
-                "updateIds": f"[{json.dumps(update_id)}]"
-                if not update_id.startswith("[")
-                else update_id
+                "updateIds": (
+                    f"[{json.dumps(update_id)}]" if not update_id.startswith("[") else update_id
+                )
             },
         )
         # Note: The real URL expects `updateIds` to be a JSON array string sometimes
-        # Let's try raw ID first, usually `updateIds` param takes `[{"size":0,"languages":"","uid":"..."}]`
+        # Let's try raw ID first
+        # (usually `updateIds` param takes `[{"size":0,"languages":"","uid":"..."}]`)
         # Actually, simpler: `updateIds=[{"uid":"..."}]`
 
         # We might need to construct the payload carefully.

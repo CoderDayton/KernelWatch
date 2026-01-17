@@ -50,7 +50,7 @@ def compute_authentihash(file_path: str | Path) -> tuple[str, str] | None:
 
     try:
         with open(file_path, "rb") as f:
-            fpr = fingerprinter.AuthenticodeFingerprinter(f)
+            fpr = fingerprinter.AuthenticodeFingerprinter(f)  # type: ignore
             fpr.add_authenticode_hashers(hashlib.sha256, hashlib.sha1)
             results = fpr.hash()
 

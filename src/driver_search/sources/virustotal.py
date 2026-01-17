@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from driver_search.sources.base import Source, SourceResult
 from driver_search.utils.http import RateLimitedClient
@@ -62,16 +62,20 @@ class VirusTotalSource(Source):
 
         return result
 
-    async def fetch_incremental(
+    def fetch_incremental(
         self,
         since: datetime | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[SourceResult]:
         """VT doesn't support incremental fetch without LiveHunt (premium)."""
-        # This is a no-op for free tier
-        result = SourceResult(source_name=self.name)
-        result.errors.append("Incremental fetch requires VT Premium (LiveHunt)")
-        yield result
+
+        async def _generator() -> AsyncIterator[SourceResult]:
+            # This is a no-op for free tier
+            result = SourceResult(source_name=self.name)
+            result.errors.append("Incremental fetch requires VT Premium (LiveHunt)")
+            yield result
+
+        return _generator()
 
     async def lookup_hash(self, hash_value: str) -> dict[str, Any] | None:
         """Look up a file by hash."""
@@ -82,7 +86,8 @@ class VirusTotalSource(Source):
             return None
 
         response.raise_for_status()
-        return self._parse_file_response(response.json())
+        result_data: dict[str, Any] = cast("dict[str, Any]", response.json())
+        return self._parse_file_response(result_data)
 
     async def get_file_behavior(self, hash_value: str) -> dict[str, Any] | None:
         """Get behavioral analysis for a file."""
@@ -93,7 +98,7 @@ class VirusTotalSource(Source):
             return None
 
         response.raise_for_status()
-        return response.json().get("data", {})
+        return cast("dict[str, Any] | None", response.json().get("data"))
 
     async def search_drivers(
         self,
@@ -108,7 +113,10 @@ class VirusTotalSource(Source):
         response.raise_for_status()
 
         data = response.json()
-        return [self._parse_file_response(item) for item in data.get("data", [])]
+        results: list[dict[str, Any]] = [
+            self._parse_file_response(item) for item in data.get("data", [])
+        ]
+        return results
 
     def _parse_file_response(self, data: dict[str, Any]) -> dict[str, Any]:
         """Parse VT file response into normalized format."""

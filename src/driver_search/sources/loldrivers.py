@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
@@ -81,43 +81,46 @@ class LOLDriversSource(Source):
         result.driver_hashes = list(dict.fromkeys(result.driver_hashes))
         return result
 
-    async def fetch_incremental(
+    def fetch_incremental(
         self,
         since: datetime | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[SourceResult]:
         """Fetch newly added drivers since last check."""
-        if since is None:
-            since = datetime.now() - timedelta(days=30)
 
-        try:
-            commits = await self._get_recent_commits(since)
+        async def _generator() -> AsyncIterator[SourceResult]:
+            start_date = since if since is not None else (datetime.now() - timedelta(days=30))
 
-            for commit in commits:
+            try:
+                commits = await self._get_recent_commits(start_date)
+
+                for commit in commits:
+                    result = SourceResult(source_name=self.name)
+                    result.metadata["commit_sha"] = commit["sha"]
+                    result.metadata["commit_date"] = commit["date"]
+                    result.metadata["commit_message"] = commit["message"]
+
+                    # Get files changed in this commit
+                    changed_files = await self._get_commit_files(commit["sha"])
+
+                    for file_path in changed_files:
+                        if file_path.endswith(".yaml") and "yaml/" in file_path:
+                            try:
+                                driver_data = await self._fetch_driver_yaml(file_path)
+                                hashes = self._extract_hashes(driver_data)
+                                result.driver_hashes.extend(hashes)
+                            except Exception as e:
+                                result.errors.append(f"Error processing {file_path}: {e}")
+
+                    if result.driver_hashes:
+                        yield result
+
+            except Exception as e:
                 result = SourceResult(source_name=self.name)
-                result.metadata["commit_sha"] = commit["sha"]
-                result.metadata["commit_date"] = commit["date"]
-                result.metadata["commit_message"] = commit["message"]
+                result.errors.append(f"Error fetching commits: {e}")
+                yield result
 
-                # Get files changed in this commit
-                changed_files = await self._get_commit_files(commit["sha"])
-
-                for file_path in changed_files:
-                    if file_path.endswith(".yaml") and "yaml/" in file_path:
-                        try:
-                            driver_data = await self._fetch_driver_yaml(file_path)
-                            hashes = self._extract_hashes(driver_data)
-                            result.driver_hashes.extend(hashes)
-                        except Exception as e:
-                            result.errors.append(f"Error processing {file_path}: {e}")
-
-                if result.driver_hashes:
-                    yield result
-
-        except Exception as e:
-            result = SourceResult(source_name=self.name)
-            result.errors.append(f"Error fetching commits: {e}")
-            yield result
+        return _generator()
 
     async def _list_yaml_files(self) -> list[str]:
         """List all YAML files in the drivers directory."""
@@ -134,12 +137,13 @@ class LOLDriversSource(Source):
         response = await self._client.get(url)
         response.raise_for_status()
 
-        return yaml.safe_load(response.text)
+        result_data: dict[str, Any] = cast("dict[str, Any]", yaml.safe_load(response.text))
+        return result_data
 
     async def _get_recent_commits(self, since: datetime) -> list[dict[str, Any]]:
         """Get commits to the yaml directory since a date."""
         url = f"{GITHUB_API_BASE}/repos/{LOLDRIVERS_REPO}/commits"
-        params = {
+        params: dict[str, str] = {
             "path": "yaml",
             "since": since.isoformat(),
             "per_page": "100",
@@ -148,7 +152,7 @@ class LOLDriversSource(Source):
         response = await self._client.get(url, params=params, headers=self._get_headers())
         response.raise_for_status()
 
-        commits = response.json()
+        commits: list[dict[str, Any]] = response.json()
         return [
             {
                 "sha": c["sha"],
@@ -184,7 +188,7 @@ class LOLDriversSource(Source):
         result = await self.fetch()
         for driver in result.metadata.get("drivers", []):
             if sha256.lower() in [h.lower() for h in driver.get("hashes", [])]:
-                return driver
+                return cast("dict[str, Any]", driver)
         return None
 
     async def health_check(self) -> bool:

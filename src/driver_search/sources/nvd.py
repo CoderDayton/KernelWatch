@@ -75,23 +75,26 @@ class NVDSource(Source):
         result.cve_ids = list(dict.fromkeys(result.cve_ids))
         return result
 
-    async def fetch_incremental(
+    def fetch_incremental(
         self,
         since: datetime | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[SourceResult]:
         """Fetch new CVEs since last check."""
-        if since is None:
-            since = datetime.now() - timedelta(days=7)
 
-        for keyword in self._keywords:
-            result = await self.fetch(
-                keyword=keyword,
-                start_date=since,
-                end_date=datetime.now(),
-            )
-            if result.total_items > 0:
-                yield result
+        async def _generator() -> AsyncIterator[SourceResult]:
+            start_date = datetime.now() - timedelta(days=7) if since is None else since
+
+            for keyword in self._keywords:
+                result = await self.fetch(
+                    keyword=keyword,
+                    start_date=start_date,
+                    end_date=datetime.now(),
+                )
+                if result.total_items > 0:
+                    yield result
+
+        return _generator()
 
     async def _search_keyword(
         self,

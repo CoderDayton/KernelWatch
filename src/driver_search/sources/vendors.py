@@ -39,9 +39,10 @@ class ASUSScraper(VendorScraper):
         # ASUS uses an API for their download center.
         # This is a simplified implementation targeting specific product categories
         # known to have vulnerable utilities (Motherboards, Graphics Cards)
-        results = []
+        results: list[dict[str, Any]] = []
 
-        # Example API endpoint for searching (mocked logic for now as real API requires complex session)
+        # Example API endpoint for searching
+        # (mocked logic for now as real API requires complex session)
         # In a real implementation, we would hit: https://rog.asus.com/api/ ...
 
         # For this implementation, we will use a "Known URL" approach where we check
@@ -113,17 +114,21 @@ class VendorSource(Source):
 
         return result
 
-    async def fetch_incremental(
+    def fetch_incremental(
         self,
         since: datetime | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[SourceResult]:
         """Poll vendors for new files."""
-        # Vendor scraping is expensive/heavy, so we usually treat it as a full fetch
-        # but filter by date if the vendor provides it.
-        result = await self.fetch()
-        if result.total_items > 0:
-            yield result
+
+        async def _generator() -> AsyncIterator[SourceResult]:
+            # Vendor scraping is expensive/heavy, so we usually treat it as a full fetch
+            # but filter by date if the vendor provides it.
+            result = await self.fetch()
+            if result.total_items > 0:
+                yield result
+
+        return _generator()
 
     async def close(self) -> None:
         await self._client.close()
