@@ -85,13 +85,13 @@ export type BadgeVariants = VariantProps<typeof badgeVariants>;
 
 /** Card/Panel variants */
 export const panelVariants = cva(
-  'rounded-lg border',
+  'rounded-lg border p-5',
   {
     variants: {
       variant: {
         default: 'bg-[var(--color-surface)] border-[var(--color-border)]',
-        raised: 'bg-[var(--color-surface-raised)] border-[var(--color-border-bright)]',
-        ghost: 'bg-transparent border-transparent',
+        raised: 'bg-[var(--color-surface-raised)] border-[var(--color-border)]',
+        ghost: 'bg-transparent border-transparent p-0',
       },
     },
     defaultVariants: {
