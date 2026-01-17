@@ -1,5 +1,6 @@
 """Integration tests for Driver Search."""
 
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -13,7 +14,7 @@ runner = CliRunner()
 
 
 @pytest.fixture
-def mock_db(tmp_path):
+def mock_db(tmp_path: Path) -> Path:
     """Setup a temporary database."""
     reset_settings()
     settings = get_settings()
@@ -23,7 +24,7 @@ def mock_db(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_db_init(mock_db):
+async def test_db_init(mock_db: Path) -> None:
     """Test database initialization."""
     async with get_database() as db:
         stats = await db.get_stats()
@@ -31,14 +32,14 @@ async def test_db_init(mock_db):
         assert stats["analyses"] == 0
 
 
-def test_cli_help():
+def test_cli_help() -> None:
     """Test CLI help command."""
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "Vulnerable driver research tooling" in result.stdout
 
 
-def test_cli_sync_loldrivers(mock_db):
+def test_cli_sync_loldrivers(mock_db: Path) -> None:
     """Test sync-loldrivers command (mocked)."""
     with patch(
         "driver_search.analyzer.Analyzer.sync_loldrivers", new_callable=AsyncMock
@@ -50,7 +51,7 @@ def test_cli_sync_loldrivers(mock_db):
         assert "Successfully synced 10 driver hashes" in result.stdout
 
 
-def test_cli_dashboard_json(mock_db):
+def test_cli_dashboard_json(mock_db: Path) -> None:
     """Test dashboard JSON output."""
     # Initialize DB with some dummy data for the dashboard to read
     # We can use the mock_db fixture which sets up the path, but the DB is empty
@@ -64,7 +65,7 @@ def test_cli_dashboard_json(mock_db):
 
 
 @pytest.mark.asyncio
-async def test_save_driver(mock_db):
+async def test_save_driver(mock_db: Path) -> None:
     """Test saving a driver to DB."""
     from driver_search.models import Driver, DriverHash
 

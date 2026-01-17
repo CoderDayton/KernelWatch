@@ -1,5 +1,7 @@
 """Tests for PE analysis and disassembly."""
 
+from collections.abc import Generator
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,7 +12,7 @@ from driver_search.models import Driver, DriverHash
 
 
 @pytest.fixture
-def mock_pe():
+def mock_pe() -> Generator[MagicMock, None, None]:
     """Mock pefile.PE object."""
     with patch("pefile.PE") as mock:
         pe_instance = mock.return_value
@@ -23,7 +25,7 @@ def mock_pe():
         yield mock
 
 
-def test_analyze_pe_basic(mock_pe, tmp_path):
+def test_analyze_pe_basic(mock_pe: MagicMock, tmp_path: Path) -> None:
     """Test basic PE analysis."""
     dummy_file = tmp_path / "test.sys"
     dummy_file.write_bytes(b"MZ" + b"\x00" * 100)
@@ -45,7 +47,7 @@ def test_analyze_pe_basic(mock_pe, tmp_path):
     assert mock_pe.called or result.errors
 
 
-def test_calculate_risk_score():
+def test_calculate_risk_score() -> None:
     """Test risk score calculation logic."""
     driver = Driver(name="test", hashes=DriverHash(sha256="abc"))
 
@@ -70,7 +72,7 @@ def test_calculate_risk_score():
     assert calculate_risk_score(result, in_loldrivers=False) == 100
 
 
-def test_ioctl_code_parsing():
+def test_ioctl_code_parsing() -> None:
     """Test parsing of IOCTL codes."""
     # Example: Device=0x22 (Unknown), Access=0, Function=1, Method=0
     # (0x22 << 16) | (0 << 14) | (1 << 2) | 0 = 0x00220004

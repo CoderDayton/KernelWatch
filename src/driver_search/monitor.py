@@ -75,7 +75,7 @@ class Monitor:
 
         console.print(f"[green]Initialized {len(self._sources)} source(s)[/green]")
 
-    async def _create_source(self, name: str) -> Source | None:
+    async def _create_source(self, name: str) -> Source | None:  # noqa: PLR0911
         """Create a source by name."""
         settings = get_settings()
 
@@ -85,13 +85,13 @@ class Monitor:
                 api_key = settings.api_keys.nvd_api_key.get_secret_value()
             return NVDSource(api_key=api_key, keywords=settings.monitoring.nvd_keywords)
 
-        elif name == "loldrivers":
+        if name == "loldrivers":
             token = None
             if settings.api_keys.github_token:
                 token = settings.api_keys.github_token.get_secret_value()
             return LOLDriversSource(github_token=token)
 
-        elif name == "virustotal":
+        if name == "virustotal":
             if settings.api_keys.virustotal_api_key:
                 from driver_search.sources.virustotal import VirusTotalSource
 
@@ -100,17 +100,16 @@ class Monitor:
             console.print("[yellow]VirusTotal requires API key, skipping[/yellow]")
             return None
 
-        elif name == "wucatalog":
+        if name == "wucatalog":
             console.print("[yellow]Windows Update Catalog not yet implemented[/yellow]")
             return None
 
-        elif name == "vendors":
+        if name == "vendors":
             console.print("[yellow]Vendor scrapers not yet implemented[/yellow]")
             return None
 
-        else:
-            console.print(f"[yellow]Unknown source: {name}[/yellow]")
-            return None
+        console.print(f"[yellow]Unknown source: {name}[/yellow]")
+        return None
 
     async def close(self) -> None:
         """Clean up resources."""
@@ -211,10 +210,7 @@ class Monitor:
 
         for name in self._sources:
             last_poll = self._state.last_poll.get(name, datetime.min)
-            if last_poll == datetime.min:
-                poll_str = "never"
-            else:
-                poll_str = last_poll.strftime("%H:%M:%S")
+            poll_str = "never" if last_poll == datetime.min else last_poll.strftime("%H:%M:%S")
 
             findings = self._state.total_findings.get(name, 0)
             errors = len(self._state.errors.get(name, []))

@@ -16,7 +16,7 @@ from driver_search.output.loldrivers import generate_loldrivers_yaml
 from driver_search.output.yara import generate_yara_rule
 
 
-def test_loldrivers_yaml():
+def test_loldrivers_yaml() -> None:
     """Test LOLDrivers YAML generation."""
     driver = Driver(
         name="vuln.sys",
@@ -40,7 +40,7 @@ def test_loldrivers_yaml():
     assert "MSR" in yaml_out
 
 
-def test_json_output():
+def test_json_output() -> None:
     """Test JSON serialization."""
     driver = Driver(name="test.sys", hashes=DriverHash(sha256="123"))
     result = AnalysisResult(driver=driver)
@@ -53,7 +53,7 @@ def test_json_output():
     assert parsed["driver"]["hashes"]["sha256"] == "123"
 
 
-def test_yara_generation():
+def test_yara_generation() -> None:
     """Test YARA rule generation."""
     driver = Driver(
         name="malicious.sys",

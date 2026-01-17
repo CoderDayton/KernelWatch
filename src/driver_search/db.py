@@ -406,7 +406,7 @@ class Database:
                 md5=row["md5"],
                 authentihash_sha256=row["authentihash_sha256"],
                 authentihash_sha1=row["authentihash_sha1"],
-                imphash=row["imphash"] if "imphash" in row else None,
+                imphash=row["imphash"] if "imphash" in row else None,  # noqa: SIM401
             ),
             file_path=row["file_path"],
             file_size=row["file_size"],

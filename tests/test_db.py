@@ -1,6 +1,7 @@
 """Tests for database operations."""
 
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -9,7 +10,7 @@ from driver_search.models import AnalysisResult, Driver, DriverHash, RiskLevel
 
 
 @pytest.mark.asyncio
-async def test_driver_crud(tmp_path):
+async def test_driver_crud(tmp_path: Path) -> None:
     """Test Create/Read operations for drivers."""
     db_path = tmp_path / "test.db"
 
@@ -36,7 +37,7 @@ async def test_driver_crud(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_analysis_result_save(tmp_path):
+async def test_analysis_result_save(tmp_path: Path) -> None:
     """Test saving analysis results."""
     db_path = tmp_path / "test.db"
 
@@ -54,7 +55,7 @@ async def test_analysis_result_save(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_loldrivers_hashes(tmp_path):
+async def test_loldrivers_hashes(tmp_path: Path) -> None:
     """Test LOLDrivers hash operations."""
     db_path = tmp_path / "test.db"
 

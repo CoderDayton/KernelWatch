@@ -9,7 +9,7 @@ from driver_search.sources.nvd import NVDSource
 
 
 @pytest.mark.asyncio
-async def test_nvd_source_fetch():
+async def test_nvd_source_fetch() -> None:
     """Test NVD fetch logic."""
     with patch(
         "driver_search.utils.http.RateLimitedClient.get", new_callable=AsyncMock
@@ -43,20 +43,20 @@ async def test_nvd_source_fetch():
 
 
 @pytest.mark.asyncio
-async def test_loldrivers_source_fetch():
+async def test_loldrivers_source_fetch() -> None:
     """Test LOLDrivers fetch logic."""
-    with patch("driver_search.sources.loldrivers.LOLDriversSource._list_yaml_files") as mock_list:
-        with patch(
-            "driver_search.sources.loldrivers.LOLDriversSource._fetch_driver_yaml"
-        ) as mock_fetch:
-            mock_list.return_value = ["test.yaml"]
-            mock_fetch.return_value = {
-                "Name": "Vulnerable.sys",
-                "KnownVulnerableSamples": [{"SHA256": "aabbcc"}],
-            }
+    with (
+        patch("driver_search.sources.loldrivers.LOLDriversSource._list_yaml_files") as mock_list,
+        patch("driver_search.sources.loldrivers.LOLDriversSource._fetch_driver_yaml") as mock_fetch,
+    ):
+        mock_list.return_value = ["test.yaml"]
+        mock_fetch.return_value = {
+            "Name": "Vulnerable.sys",
+            "KnownVulnerableSamples": [{"SHA256": "aabbcc"}],
+        }
 
-            source = LOLDriversSource()
-            result = await source.fetch()
+        source = LOLDriversSource()
+        result = await source.fetch()
 
-            assert len(result.driver_hashes) == 1
-            assert result.driver_hashes[0] == "aabbcc"
+        assert len(result.driver_hashes) == 1
+        assert result.driver_hashes[0] == "aabbcc"

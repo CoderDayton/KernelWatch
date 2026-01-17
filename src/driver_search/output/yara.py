@@ -72,10 +72,10 @@ rule {rule_name} : vulnerable_driver {{
         date = "{date_str}"
         sha256 = "{driver.hashes.sha256}"
         risk_score = {result.risk_score}
-        
+
     strings:
         $s1 = "{driver.original_filename or driver.name}" wide ascii
-        
+
     condition:
         uint16(0) == 0x5A4D and filesize < {file_size_limit} and
         (
